@@ -3,13 +3,14 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DonateurController;
+use App\Http\Controllers\Api\ParticipationController;
+use App\Http\Controllers\Api\StructureTransfusionController;
 use App\Http\Controllers\CampagneController;
 use App\Http\Controllers\OrganisateurController;
 use App\Http\Controllers\CampagneStructureController;
 // use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Banque_sangController;
 use App\Http\Controllers\DemandeRavitaillementController;
-use App\Http\Controllers\ParticipationController;
 
 // Routes pour l'enregistrement et la connexion (publiques)
 Route::post('/register', [AuthController::class, 'register'])->name('register');
@@ -30,6 +31,12 @@ Route::middleware('auth:api')->get('/donateur', [DonateurController::class, 'get
 Route::get('/donateurs/utilisateur/{userId}', [DonateurController::class, 'getDonateurByUserId']);
 Route::apiResource('donateurs', DonateurController::class);
 
+
+// Route pour créer une participation (nécessite authentification avec token)
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/participations/historiques', [ParticipationController::class, 'historiquecampagnes']);
+    Route::get('/participations/campagne/{campagneId}/donateurs', [ParticipationController::class, 'donateursParCampagne']);
+});
 
 
     Route::apiResource('banques', App\Http\Controllers\Banque_sangController::class);

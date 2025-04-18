@@ -1,6 +1,7 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
 
 use App\Models\Participation;
 use Illuminate\Http\Request;
@@ -8,184 +9,58 @@ use Illuminate\Support\Facades\Auth;
 
 class ParticipationController extends Controller
 {
-    /**
-     * Afficher toutes les participations.
+   /**
+     * Récupérer toutes les campagnes auxquelles le donateur connecté est inscrit.
      */
-    public function index()
+    public function historiquecampagnes()
     {
-        $participations = Participation::with(['donateur', 'campagne'])->get();
+        $donateur = Auth::user();
+
+        if (!$donateur) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Donateur non authentifié',
+            ], 401);
+        }
+
+        $campagnes = Participation::with('campagne')
+            ->where('donateur_id', $donateur->id)
+            ->get()
+            ->pluck('campagne')
+            ->unique('id')
+            ->values();
 
         return response()->json([
             'status' => true,
-            'message' => 'Liste des participations récupérée avec succès',
-            'data' => $participations
+            'message' => 'Campagnes récupérées avec succès',
+            'data' => $campagnes,
         ], 200);
     }
 
     /**
-     * Récupérer les participations d’un utilisateur authentifié.
+     * Récupérer tous les donateurs inscrits à une campagne spécifique.
      */
-    public function getParticipationsByDonateurId($id)
+    public function donateursParCampagne($campagneId)
     {
-        try {
-            $donateurId = Auth::id();
+        $organisateur = Auth::user();
 
-            if (!$donateurId) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Donateur non authentifié',
-                ], 401);
-            }
-
-            $participations = Participation::where('donateur_id', $id)->with('campagne')->get();
-
-            if ($participations->isEmpty()) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Aucune participation trouvée pour ce donateur',
-                ], 404);
-            }
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Participations récupérées avec succès',
-                'data' => $participations
-            ], 200);
-
-        } catch (\Exception $e) {
+        if (!$organisateur) {
             return response()->json([
                 'status' => false,
-                'message' => 'Erreur lors de la récupération des participations',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'Organisateur non authentifié',
+            ], 401);
         }
-    }
-
-    /**
-     * Créer une nouvelle participation.
-     */
-    public function store(Request $request)
-    {
-        try {
-            $validated = $request->validate([
-                'donateur_id' => 'required|exists:donateurs,id',
-                'campagne_id' => 'required|exists:campagnes,id',
-                'statut' => 'required|in:en attente,acceptée,refusée',
-                'date_participation' => 'required|date',
-                'lieu_participation' => 'required|string|max:255',
-            ]);
-
-            $participation = Participation::create($validated);
-            
-            return response()->json([
-                'status' => true,
-                'message' => 'Participation enregistrée avec succès',
-                'data' => $participation
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Erreur lors de la création de la participation',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Afficher une participation spécifique.
-     */
-    public function show($id)
-    {
-        $participation = Participation::with(['donateur', 'campagne'])->find($id);
-
-        if (!$participation) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Participation non trouvée',
-            ], 404);
-        }
+        $participations = Participation::with('donateur')
+            ->where('campagne_id', $campagneId)
+            ->get()
+            ->pluck('donateur')
+            ->unique('id')
+            ->values();
 
         return response()->json([
             'status' => true,
-            'message' => 'Participation trouvée',
-            'data' => $participation
-        ]);
-    }
-
-    /**
-     * Mettre à jour une participation.
-     */
-    public function update(Request $request, $id)
-    {
-        $participation = Participation::find($id);
-
-        if (!$participation) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Participation non trouvée',
-            ], 404);
-        }
-
-        $request->validate([
-            'statut' => 'sometimes|in:en attente,acceptée,refusée',
-            'date_participation' => 'sometimes|date',
-            'lieu_participation' => 'sometimes|string|max:255',
-        ]);
-
-        $participation->update($request->only([
-            'statut',
-            'date_participation',
-            'lieu_participation',
-        ]));
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Participation mise à jour avec succès',
-            'data' => $participation
-        ]);
-    }
-
-    /**
-     * Valider une participation (changer le statut en "acceptée").
-     */
-    public function validerParticipation($id)
-    {
-        $participation = Participation::find($id);
-
-        if (!$participation) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Participation introuvable',
-            ], 404);
-        }
-
-        $participation->update(['statut' => 'acceptée']);
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Participation acceptée avec succès'
-        ]);
-    }
-
-    /**
-     * Supprimer une participation.
-     */
-    public function destroy($id)
-    {
-        $participation = Participation::find($id);
-
-        if (!$participation) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Participation non trouvée',
-            ], 404);
-        }
-
-        $participation->delete();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'Participation supprimée avec succès',
-        ]);
+            'message' => 'Liste des donateurs inscrits à la campagne',
+            'data' => $participations,
+        ], 200);
     }
 }

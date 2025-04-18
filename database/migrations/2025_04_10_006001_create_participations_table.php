@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('participations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('donateur_id')->constrained('donateurs')->onDelete('cascade');
             $table->foreignId('campagne_id')->constrained('campagnes')->onDelete('cascade');
             $table->enum('statut', ['en attente', 'acceptée', 'refusée']);
             $table->date('date_participation');

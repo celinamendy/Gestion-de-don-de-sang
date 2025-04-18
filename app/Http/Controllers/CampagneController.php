@@ -18,9 +18,6 @@ public function index()
             'data' => $campagnes
         ],200);
     }
-   
-
-
 
     public function store(Request $request)
     {

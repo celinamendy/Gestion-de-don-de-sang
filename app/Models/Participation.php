@@ -8,9 +8,9 @@ class Participation extends Model
 {
     protected $guarded = [];
 
-    public function utilisateur()
+    public function donateur()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(Donateur::class);
     }
     
     public function campagne()
