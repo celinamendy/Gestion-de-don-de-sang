@@ -1,0 +1,40 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Structure_transfusion_sanguin;
+class Structure_Transfusion_SanguinsSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        // Récupérer l'utilisateur avec le rôle "Structure de transfusion sanguine"
+        $user = User::where('email', 'structure@gmail.com')->first();
+
+        if ($user) {
+            $structures = [
+                [
+                    'user_id' => $user->id,
+                    'nom_responsable' => 'Dr Diouf',
+                    'type_entite' => 'Hôpital',
+                    'adresse' => 'Dakar Plateau',
+                ],
+                [
+                    'user_id' => $user->id,
+                    'nom_responsable' => 'Dr Sow',
+                    'type_entite' => 'poste de santé',
+                    'adresse' => 'Pikine',
+                ],
+            ];
+
+            foreach ($structures as $structureData) {
+                Structure_transfusion_sanguin::create($structureData);
+            }
+        }
+    }
+}
