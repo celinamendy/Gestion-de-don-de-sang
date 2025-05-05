@@ -16,6 +16,20 @@ class CampagneDonateurController extends Controller
             'data' => $campagnes
         ]);
     }
-
+    public function show($id)
+    {
+        $campagne = Campagne::find($id);
+        if (!$campagne) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Campagne non trouvée',
+            ], 404);
+        }
+        return response()->json([
+            'status' => true,
+            'message' => 'Détails de la campagne',
+            'data' => $campagne
+        ]);
+    }
 
 }

@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Model;
 
-class Structure_transfusion_sanguin extends Model
+class StructureTransfusionSanguin extends Model
 {
     protected $guarded = [];
     use HasFactory, HasRoles;

@@ -8,10 +8,11 @@ class Campagne extends Model
 {
     protected $guarded = [];
 
-    public function structure()
+    public function structureTransfusionSanguin()
     {
-        return $this->belongsTo(Structure_transfusion_sanguin::class);
+        return $this->belongsTo(StructureTransfusionSanguin::class);
     }
+    
 
     public function organisateur()
     {

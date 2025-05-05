@@ -9,6 +9,7 @@ use App\Models\Organisateur;
 use App\Models\Admin;
 use App\Models\StructureTransfusionSanguin;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
@@ -18,35 +19,48 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        Log::info('Tentative de connexion', ['email' => $request->email]);
-
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email'],
             'password' => ['required', 'string', 'min:8'],
         ]);
 
         if ($validator->fails()) {
-            Log::warning('Échec de validation à la connexion', ['errors' => $validator->errors()]);
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $user = User::where('email', $request->email)->first();
+
         if (!$user || !Hash::check($request->password, $user->password)) {
-            Log::warning('Échec d\'authentification', ['email' => $request->email]);
             return response()->json(['message' => 'Identifiants invalides.'], 401);
         }
 
-        $token = auth()->guard('api')->login($user);
-        Log::info('Connexion réussie', ['user_id' => $user->id]);
+        $token = JWTAuth::fromUser($user);
+        // Définir les variables avant de les utiliser
+        $organisateur = $user->organisateur;  // Récupérer l'organisateur si l'utilisateur en est un
+        $donateur = $user->donateur;          // Récupérer le donateur si l'utilisateur en est un
+        $admin = $user->admin;                // Récupérer l'admin si l'utilisateur en est un
+        $structure_transfusion_sanguin = $user->structure;  // Récupérer la structure si l'utilisateur en est un
 
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'user' => [
+                'id' => $user->id,
+                'nom' => $user->nom,
+                'email' => $user->email,
+                'telephone' => $user->telephone,
+                'region_id' => $user->region_id,
+                'organisateur_id' => optional($organisateur)->id,
+                'donateur_id' => optional($donateur)->id,
+                'admin_id' => optional($admin)->id,
+                'structure_transfusion_sanguin_id' => optional($structure_transfusion_sanguin)->id,
+            ],
             'roles' => $user->getRoleNames(),
-            'user' => $user,
-            'expires_in' => auth()->guard('api')->factory()->getTTL() * 60,
         ]);
+        
     }
+
 
     public function register(Request $request)
     {
@@ -58,7 +72,7 @@ class AuthController extends Controller
             'nom' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'string', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
-            'type' => ['required', 'in:admin,donateur,organisateur,structure transfusion sanguine'],
+            'type' => ['required', 'in:admin,donateur,organisateur,structure_transfusion_sanguin'],
             'telephone' => ['nullable', 'string', 'max:20'],
             'region_id' => ['nullable', 'exists:regions,id'],
             'adresse' => ['nullable', 'string'],

@@ -69,7 +69,28 @@ class DonateurController extends Controller
             'data' => $donateur
         ], 201);
     }
-
+    public function show($id)
+    {
+        // Récupérer le donateur par l'ID passé en paramètre
+        $donateur = Donateur::findOrFail($id);
+    
+        return response()->json([
+            'status' => true,
+            'message' => 'Profil récupéré avec succès.',
+            'data' => $donateur,
+        ]);
+    }
+    public function profil()
+    {
+        $donateur = Auth::user()->donateur;  // Récupère le donateur connecté via l'authentification
+    
+        return response()->json([
+            'status' => true,
+            'message' => 'Profil récupéré avec succès.',
+            'data' => $donateur,
+        ]);
+    }
+        
     /**
      * Afficher les informations d'un donateur par ID utilisateur.
      */
@@ -191,5 +212,53 @@ class DonateurController extends Controller
         ]);
     }
   
+    public function dashboardDonateur()
+{
+    $user = Auth::user();
+
+    // Vérifie si le user est un donateur
+    $donateur = Donateur::where('user_id', $user->id)->first();
+    if (!$donateur) {
+        return response()->json(['message' => 'Donateur non trouvé.'], 404);
+    }
+
+    // Nombre de dons effectués
+    $donsEffectues = Participation::where('donateur_id', $donateur->id)->count();
+
+    // Dernier don
+    $dernierDon = Participation::where('donateur_id', $donateur->id)
+        ->orderBy('date', 'desc')
+        ->first();
+
+    // Calcul du prochain don (3 mois après le dernier)
+    $prochainDon = $dernierDon ? Carbon::parse($dernierDon->date)->addMonths(3)->toDateString() : 'Aucun don précédent';
+
+    // Éligibilité : si 3 mois sont passés
+    $statutEligibilite = $dernierDon && Carbon::parse($dernierDon->date)->addMonths(3)->isPast()
+        ? 'Éligible'
+        : 'Non éligible';
+
+    // Badges fictifs
+    $badges = $donsEffectues >= 5 ? 3 : ($donsEffectues >= 2 ? 1 : 0);
+
+    // Campagnes à venir
+    $campagnes = Campagne::where('date_debut', '>', Carbon::today())->orderBy('date_debut')->get();
+
+    // Historique des participations
+    $historique = Participation::with('campagne')
+        ->where('donateur_id', $donateur->id)
+        ->orderBy('date', 'desc')
+        ->get();
+
+    return response()->json([
+        'donateur' => $donateur,
+        'dons_effectues' => $donsEffectues,
+        'prochain_don' => $prochainDon,
+        'statut_eligibilite' => $statutEligibilite,
+        'badges' => $badges,
+        'campagnes' => $campagnes,
+        'historique' => $historique
+    ]);
+}
 
 }

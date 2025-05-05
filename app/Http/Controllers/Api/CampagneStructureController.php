@@ -5,7 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Campagne;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
+use App\Models\StructureTransfusionSanguin;
+use App\Models\Organisateur;
+use App\Models\User;
+use App\Models\Donateur;
+use App\Models\Participation;
+use App\Models\Banque_sang;
+use App\Models\DemandeRavitaillement;
+use App\Models\Notification;
+use App\Models\Region;
 class CampagneStructureController extends Controller
 {
     /**
@@ -54,8 +62,8 @@ class CampagneStructureController extends Controller
             'lieu' => 'required|string|max:255',
             'date_debut' => 'required|date',
             'date_fin' => 'required|date|after_or_equal:date_debut',
-            'Heure_debut' => 'required|date_format:H:i',
-            'Heure_fin' => 'required|date_format:H:i|after:Heure_debut',
+            'heure_debut' => 'required|date_format:H:i',
+            'heure_fin' => 'required|date_format:H:i|after:Heure_debut',
             'participant' => 'required|integer|min:1',
             'statut' => 'required|string',
             'organisateur_id' => 'required|exists:organisateurs,id',
@@ -94,6 +102,23 @@ class CampagneStructureController extends Controller
             'data' => $campagne
         ], 200);
     }
+    /**
+     * Récupère une structure transfusion sanguine par l'ID de l'organisateur.
+     */
+    public function getByOrganisateur($id)
+{
+    $structure = StructureTransfusionSanguin::where('organisateur_id', $id)->first();
+
+    if (!$structure) {
+        return response()->json(['message' => 'Structure non trouvée.'], 404);
+    }
+
+    return response()->json([
+        'status' => true,
+        'data' => $structure
+    ]);
+}
+
 
     /**
      * Récupère les campagnes d'une structure spécifique par son ID.
@@ -145,8 +170,8 @@ class CampagneStructureController extends Controller
             'lieu' => 'nullable|string|max:255',
             'date_debut' => 'nullable|date',
             'date_fin' => 'nullable|date',
-            'Heure_debut' => 'nullable|date_format:H:i',
-            'Heure_fin' => 'nullable|date_format:H:i',
+            'heure_debut' => 'nullable|date_format:H:i',
+            'heure_fin' => 'nullable|date_format:H:i',
             'participant' => 'nullable|integer|min:1',
             'statut' => 'nullable|string',
             'organisateur_id' => 'nullable|exists:organisateurs,id',

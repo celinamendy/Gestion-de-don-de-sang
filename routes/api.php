@@ -6,15 +6,20 @@ use App\Http\Controllers\Api\DonateurController;
 use App\Http\Controllers\Api\ParticipationController;
 use App\Http\Controllers\Api\StructureTransfusionController;
 use App\Http\Controllers\CampagneController;
-use App\Http\Controllers\OrganisateurController;
 use App\Http\Controllers\CampagneStructureController;
 // use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Banque_sangController;
 use App\Http\Controllers\DemandeRavitaillementController;
+use App\Http\Controllers\API\DashboardController;
+use App\Http\Controllers\API\OrganisateurController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\API\DashboardDonateurController;
+
 
 // Routes pour l'enregistrement et la connexion (publiques)
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
+Route::middleware('auth:api')->get('/user-info', [UserController::class, 'getUserInfo']);
 
 
 // Routes protégées par authentification
@@ -25,13 +30,67 @@ Route::middleware('auth:api')->group(function () {
 });
 // Routes pour les opérations CRUD sur les donateurs
 
+// // Récupérer le donateur connecté (nécessite authentification avec token)
+// Route::middleware('auth:api')->get('/donateur', [DonateurController::class, 'getAuthenticatedDonateur']);
+// // Récupérer un donateur par l'ID de l'utilisateur
+// Route::get('/donateurs/utilisateur/{userId}', [DonateurController::class, 'getDonateurByUserId']);
+// Route::apiResource('donateurs', DonateurController::class);
+// Route::get('/donateurs/profil', [DonateurController::class, 'profil']);
+// Route::get('/donateurs/dashboard', [DonateurDashboardController::class, 'dashboardDonateur']);
+
+
 // Récupérer le donateur connecté (nécessite authentification avec token)
-Route::middleware('auth:api')->get('/donateur', [DonateurController::class, 'getAuthenticatedDonateur']);
+Route::middleware('auth:api')->group(function () {
+    
+Route::get('/donateur', [DonateurController::class, 'getAuthenticatedDonateur']);
+// Liste de tous les donateurs
+Route::get('/donateurs', [DonateurController::class, 'index']);
+    
+// Création d’un donateur avec utilisateur associé
+Route::post('/donateurs', [DonateurController::class, 'store']);
+
+// Afficher un donateur par ID
+Route::get('/donateurs/{id}', [DonateurController::class, 'show']);
+
+// Afficher le profil du donateur connecté
+Route::get('/donateur/profil', [DonateurController::class, 'profil']);
+
+// Récupérer un donateur par ID utilisateur
+Route::get('/donateur/user/{userId}', [DonateurController::class, 'getDonateurByUserId']);
+
+// Mise à jour d’un donateur
+Route::put('/donateurs/{id}', [DonateurController::class, 'update']);
+
+// Suppression d’un donateur
+Route::delete('/donateurs/{donateur}', [DonateurController::class, 'destroy']);
+
+// Dashboard donateur (étendu)
+Route::get('/donateur/dashboard', [DonateurController::class, 'dashboardDonateur']);
+});
+Route::middleware('auth:api')->group(function () {
+    // Mini dashboard
+    Route::get('/dashboard/donateur', [DashboardDonateurController::class, 'dashboardDonateur']);
+    Route::get('/dashboard', [DashboardDonateurController::class, 'index']);
+    Route::get('/dashboard/user', [DashboardDonateurController::class, 'dashboardDonateur']);
+    Route::get('/campagnes/avenir', [DashboardDonateurController::class, 'campagnesAVenir']);
+    Route::post('/campagnes/{id}/inscription', [DashboardDonateurController::class, 'inscriptionCampagne']);
+    Route::get('/dashboard/historique', [DashboardDonateurController::class, 'historiqueDons']);
+    Route::get('/dashboard/verifier', [DashboardDonateurController::class, 'verifierEligibilite']);
+    Route::post('/dashboard/tester', [DashboardDonateurController::class, 'lancerTestEligibilite']);
+});
+
 // Récupérer un donateur par l'ID de l'utilisateur
-Route::get('/donateurs/utilisateur/{userId}', [DonateurController::class, 'getDonateurByUserId']);
-Route::apiResource('donateurs', DonateurController::class);
+// Route::get('/donateurs/utilisateur/{userId}', [DonateurController::class, 'getDonateurByUserId']);
 
+// // CRUD sur les donateurs
+// Route::apiResource('donateurs', DonateurController::class);
 
+// // Récupérer le profil du donateur connecté
+// Route::get('/donateurs/profil', [DonateurController::class, 'profil']);
+
+// // Dashboard du donateur - afficher des informations de base
+// Route::get('/donateurs/dashboard', [DonateurDashboardController::class, 'dashboardDonateur']);
+// Route::get('/donateur', [DonateurController::class, 'getAuthenticatedDonateur']);
 // Route pour créer une participation (nécessite authentification avec token)
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/participations/historiques', [ParticipationController::class, 'historiquecampagnes']);
@@ -43,16 +102,39 @@ Route::middleware(['auth:api'])->group(function () {
     Route::apiResource('demandes', DemandeRavitaillementController::class);
 
 
+    Route::get('/campagnes', [CampagneController::class, 'getAllCampagnes']); // accès public
+    Route::get('/campagnes/{id}', [CampagneController::class, 'show']);
 
-// Routes pour l'organisateur et ces opérations crud sur les campagnes 
-Route::middleware(['auth:api'])->group(function () {
+// Campagnes
+Route::middleware('auth:api')->group(function () {
+    // Route::get('/campagnes', [CampagneController::class, 'index']);
+    Route::get('/campagnes/actives', [CampagneController::class, 'campagnesActives']);
+    Route::get('/campagnes/passees', [CampagneController::class, 'campagnesPassées']);
+    Route::get('/campagnes/validees', [CampagneController::class, 'campagnesValidees']);
+    Route::get('/campagnes/annulees', [CampagneController::class, 'campagnesAnnulees']);
+    Route::get('/campagnes/structure/{id}', [CampagneController::class, 'getCampagnesByStructureId']);
+    // Route::get('/mes-campagnes', [CampagneController::class, 'mesCampagnes']);
+    Route::get('organisateurs/mes-campagnes', [OrganisateurController::class, 'mesCampagnes']);
     Route::post('/campagnes', [CampagneController::class, 'store']);
-    Route::get('/organisateurs/{id}/campagnes', [CampagneController::class, 'getCampagnesByOrganisateurId']);
-    Route::get('campagnes/{campagne}/participations', [CampagneController::class, 'participants']);
-    Route::patch('participations/{id}/valider', [CampagneController::class, 'validerParticipation']);
-    Route::apiResource('campagnes', CampagneController::class);
-    Route::put('/organisateurs/campagnes/{id}', [CampagneController::class, 'update']);
+    Route::get('/organisateurs/{id}/campagnes', [CampagneController::class, 'getCampagnes']);
+    Route::put('/campagnes/{id}', [CampagneController::class, 'update']);
+    Route::delete('/campagnes/{id}', [CampagneController::class, 'destroy']);
+    Route::post('/campagnes/{id}/valider', [CampagneController::class, 'valider']);
+    Route::get('/campagnes/{id}/participants', [CampagneController::class, 'participants']);
+    Route::put('/participations/{id}/valider', [CampagneController::class, 'validerParticipation']);
+//route pour l'organisateur 
 
+Route::get('/organisateur', [OrganisateurController::class, 'getAuthenticatedOrganisateur']);
+Route::get('/organisateur/user', [OrganisateurController::class, 'getByUserId']);
+Route::get('/organisateur/{id}', [OrganisateurController::class, 'show']);
+Route::get('/organisateurs', [OrganisateurController::class, 'index']);
+
+
+
+
+
+Route::get('/campagnes/{id}/participants', [DashboardController::class, 'participations']);
+Route::get('/campagnes/{id}/demandes', [DashboardController::class, 'demandes']); // Récupérer les demandes liées à une campagne spécifique
 });
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/structure/campagnes', [CampagneStructureController::class, 'index']);
@@ -62,6 +144,7 @@ Route::middleware(['auth:api'])->group(function () {
     Route::put('/structure/campagnes/{id}', [CampagneStructureController::class, 'update']);
     Route::delete('/structure/campagnes/{id}', [CampagneStructureController::class, 'destroy']);
     Route::apiResource('structure', CampagneStructureController::class);
+    Route::get('/structures/organisateur/{id}', [StructureController::class, 'getByOrganisateur']);
 
 });
 

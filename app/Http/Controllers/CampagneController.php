@@ -3,21 +3,133 @@
 namespace App\Http\Controllers;
 
 use App\Models\Campagne;
+use App\Models\Demande;
+use App\Models\BanqueDeSang;
+use App\Models\Participation;
+use App\Models\Donateur;
+use App\Models\Organisateur;
+use App\Models\StructureTransfusionSanguin;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class CampagneController extends Controller
 {
 
-public function index()
+    public function index()
     {
-        $campagnes  = Campagne::with(organisateur)->get();
+        $campagnes = Campagne::with('organisateur')->get(); // Utilisez 'organisateur' comme chaîne
         return response()->json([
             'status' => true,
-            'message' => 'La liste des campagnes récupérée avec succes',
+            'message' => 'La liste des campagnes récupérée avec succès',
             'data' => $campagnes
-        ],200);
+        ], 200);
     }
+
+    public function getAllcampagnes()
+    {
+        $campagnes  = Campagne::all();
+        return response()->json([
+            'status' => true,
+            'message' => 'La liste des campagnes',
+            'data' => $campagnes
+        ]);
+    }
+
+//     public function getCampagnesByOrganisateurId($id)
+// {
+//     try {
+//         // $campagnes = Campagne::with(['structure', 'organisateur'])
+//         //     ->where('organisateur_id', $id)
+//         //     ->get();
+//             $campagnes = Campagne::with('structure')->where('organisateur_id', $id)->get();
+
+//         return response()->json([
+//             'success' => true,
+//             'data' => $campagnes
+//         ]);
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Erreur lors de la récupération des campagnes : ' . $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
+    public function campagnesActives()
+    {
+        $today = Carbon::today();
+        $campagnes = Campagne::where('date_debut', '>=', $today)
+            ->where('statut', 'active')
+            ->orderBy('date_debut', 'asc')
+            ->with('organisateur')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Liste des campagnes actives récupérée avec succès.',
+            'data' => $campagnes
+        ], 200);
+    }
+    public function campagnesPassées()
+    {
+        $today = Carbon::today();
+        $campagnes = Campagne::where('date_fin', '<', $today)
+            ->where('statut', '!=', 'validée')
+            ->orderBy('date_fin', 'desc')
+            ->with('organisateur')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Liste des campagnes passées récupérée avec succès.',
+            'data' => $campagnes
+        ], 200);
+    }
+    public function campagnesValidees()
+    {
+        $campagnes = Campagne::where('statut', 'validée')
+            ->orderBy('date_debut', 'asc')
+            ->with('organisateur')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Liste des campagnes validées récupérée avec succès.',
+            'data' => $campagnes
+        ], 200);
+    }
+    public function campagnesAnnulees()
+    {
+        $campagnes = Campagne::where('statut', 'annulée')
+            ->orderBy('date_debut', 'asc')
+            ->with('organisateur')
+            ->get();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Liste des campagnes annulées récupérée avec succès.',
+            'data' => $campagnes
+        ], 200);
+    }
+
+
+
+    public function getCampagnes($id)
+{
+    $organisateur = Organisateur::find($id);
+
+    if (!$organisateur) {
+        return response()->json(['error' => 'Organisateur not found'], 404);
+    }
+
+    $campagnes = $organisateur->campagnes; // Assurez-vous que la relation est bien définie dans le modèle Organisateur
+
+    return response()->json($campagnes);
+}
 
     public function store(Request $request)
     {
@@ -80,25 +192,7 @@ public function index()
             'data' => $campagne
         ], 200);
     }
-    //  Récupérer les campagnes par l'id de l'organisateur   
-    public function getCampagnesByOrganisateurId($id)
-{
-    $campagnes = Campagne::where('organisateur_id', $id)->with('organisateur')->get();
-
-    if ($campagnes->isEmpty()) {
-        return response()->json([
-            'status' => false,
-            'message' => 'Aucune campagne trouvée pour cet organisateur',
-        ], 404);
-    }
-
-    return response()->json([
-        'status' => true,
-        'message' => 'Liste des campagnes récupérée avec succès pour cet organisateur',
-        'data' => $campagnes
-    ], 200);
-}
-
+    
 
     public function update(Request $request, $id)
     {
@@ -110,11 +204,12 @@ public function index()
                 'message' => 'Campagne non trouvée.',
             ], 404);
         }
+        $campagne->load('organisateur'); // ← AJOUT ICI
 
         $user = Auth::user();
 
         // Vérifie si l'utilisateur connecté est bien l'organisateur de cette campagne
-        if ($campagne->organisateur->user_id !== $user->id) {
+        if (!$campagne->organisateur || $campagne->organisateur->user_id !== $user->id) {
             return response()->json([
                 'message' => 'Vous n\'êtes pas autorisé à modifier cette campagne.'
             ], 403);
@@ -152,10 +247,10 @@ public function index()
                 'message' => 'Campagne non trouvée.',
             ], 404);
         }
-
+        $campagne->load('organisateur');
         $user = Auth::user();
 
-        if ($campagne->organisateur->user_id !== $user->id) {
+        if (!$campagne->organisateur || $campagne->organisateur->user_id !== $user->id) {
             return response()->json([
                 'message' => 'Vous n\'êtes pas autorisé à supprimer cette campagne.'
             ], 403);
@@ -168,4 +263,67 @@ public function index()
             'message' => 'Campagne supprimée avec succès.',
         ], 200);
     }
+
+    public function validerParticipation($id)
+    {
+        $participation = Participation::findOrFail($id);
+        $participation->statut = 'validée'; // ou true si c'est un booléen
+        $participation->save();
+    
+        return response()->json(['message' => 'Participation validée avec succès.'], 200);
+    }
+    public function participants($id)
+    {
+        $campagne = Campagne::with('participations.donateur')->find($id);
+
+        if (!$campagne) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Campagne non trouvée.',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Liste des participants récupérée avec succès.',
+            'data' => $campagne->participations
+        ], 200);
+    }
+    public function valider($id)
+    {
+        $campagne = Campagne::find($id);
+
+        if (!$campagne) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Campagne non trouvée.',
+            ], 404);
+        }
+
+        $campagne->statut = 'validée'; // ou true si c'est un booléen
+        $campagne->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Campagne validée avec succès.',
+            'data' => $campagne
+        ], 200);
+    }
+    public function getCampagnesByStructureId($id)
+    {
+        $campagnes = Campagne::where('structure_transfusion_sanguin_id', $id)->with('organisateur')->get();
+        if ($campagnes->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucune campagne trouvée pour cette structure',
+            ], 404);
+        }
+        return response()->json([
+            'status' => true,
+            'message' => 'Liste des campagnes récupérée avec succès pour cette structure',
+            'data' => $campagnes
+        ], 200);    
+
+}
+
 }

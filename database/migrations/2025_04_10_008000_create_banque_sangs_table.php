@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('date_dernier_stock');
             $table->string('date_dernier_approvisionnement');
             $table->string('date_dernier_rapprochement');
+            $table->enum('statut', ['urgence', 'intervention'])->default('urgence');
             $table->foreignId('groupe_sanguin_id')->constrained('groupe_sanguins');
             $table->foreignId('structure_transfusion_sanguin_id')->constrained('structure_transfusion_sanguins');
             $table->timestamps();
