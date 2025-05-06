@@ -4,7 +4,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Banque_Sang;
+use App\Models\BanqueSang;
+use App\Models\StructureTransfusionSanguin;
 
 class Banque_sangSeeder extends Seeder
 {
@@ -56,7 +57,8 @@ class Banque_sangSeeder extends Seeder
         ];
 
         foreach ($banque_sangs as $banque_sang) {
-            Banque_Sang::create($banque_sang);
+            BanqueSang::create($banque_sang);
+
         }
     }
 }

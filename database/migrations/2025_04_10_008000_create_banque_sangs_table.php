@@ -16,13 +16,12 @@ return new class extends Migration
             $table->integer('nombre_poche');
             $table->integer('stock_actuelle');
             $table->date('date_mise_a_jour');
-            $table->enum('statut', ['disponible', 'indisponible'])->default('disponible');
             $table->string('date_expiration');
             $table->string('heure_expiration');
             $table->string('date_dernier_stock');
             $table->string('date_dernier_approvisionnement');
             $table->string('date_dernier_rapprochement');
-            $table->enum('statut', ['urgence', 'intervention'])->default('urgence');
+            $table->enum('statut', ['urgence', 'intervention','disponible','indisponible'])->default('urgence');
             $table->foreignId('groupe_sanguin_id')->constrained('groupe_sanguins');
             $table->foreignId('structure_transfusion_sanguin_id')->constrained('structure_transfusion_sanguins');
             $table->timestamps();

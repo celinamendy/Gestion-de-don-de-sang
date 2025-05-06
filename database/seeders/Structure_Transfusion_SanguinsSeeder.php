@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\User;
-use App\Models\Structure_transfusion_sanguin;
+use App\Models\StructureTransfusionSanguin;
 class Structure_Transfusion_SanguinsSeeder extends Seeder
 {
     /**
@@ -33,7 +33,8 @@ class Structure_Transfusion_SanguinsSeeder extends Seeder
             ];
 
             foreach ($structures as $structureData) {
-                Structure_transfusion_sanguin::create($structureData);
+                StructureTransfusionSanguin::create($structureData);
+
             }
         }
     }

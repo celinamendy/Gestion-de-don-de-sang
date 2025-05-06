@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class StructureTransfusionSanguin extends Model
 {
+    
     protected $guarded = [];
     use HasFactory, HasRoles;
 // Structure appartient à une région

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->integer('quantite');
             $table->enum('statut', ['en attente', 'approuvée', 'rejetée'])->default('en attente');
         
-            $table->unsignedBigInteger('structure_transfusion_sang_id');
+            $table->unsignedBigInteger('structure_transfusion_sanguin_id');
             // $table->unsignedBigInteger('structure_transfusion_sang_destinataire_id');
         
             // Foreign key avec noms plus courts
