@@ -37,7 +37,37 @@ class CampagneController extends Controller
             'data' => $campagnes
         ]);
     }
-
+    public function mescampagnes()
+    {
+        $user = Auth::user();
+    
+        if (!$user->hasRole('Organisateur')) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Seuls les organisateurs peuvent voir leurs campagnes.'
+            ], 403);
+        }
+    
+        $organisateur = $user->organisateur;
+    
+        if (!$organisateur) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucun organisateur lié à cet utilisateur.'
+            ], 404);
+        }
+    
+        $campagnes = Campagne::with('structureTransfusionSanguin')
+            ->where('organisateur_id', $organisateur->id)
+            ->get();
+    
+        return response()->json([
+            'status' => true,
+            'message' => 'Liste des campagnes récupérées avec succès.',
+            'data' => $campagnes
+        ], 200);
+    }
+    
 //     public function getCampagnesByOrganisateurId($id)
 // {
 //     try {

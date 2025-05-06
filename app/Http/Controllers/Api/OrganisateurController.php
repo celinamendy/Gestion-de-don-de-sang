@@ -38,7 +38,7 @@ class OrganisateurController extends Controller
         ]);
     }
 
-    public function getByUserId()
+    public function getByUserId($id)
 {
     $user = Auth::user();
     $organisateur = Organisateur::where('user_id', $user->id)->first();
@@ -52,6 +52,8 @@ class OrganisateurController extends Controller
         'organisateur' => $organisateur
     ]);
 }
+
+
 public function mescampagnes()
 {
     $user = Auth::user();

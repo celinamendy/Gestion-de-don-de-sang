@@ -104,10 +104,20 @@ Route::middleware(['auth:api'])->group(function () {
 
     Route::get('/campagnes', [CampagneController::class, 'getAllCampagnes']); // accès public
     Route::get('/campagnes/{id}', [CampagneController::class, 'show']);
+//route organisateur 
+Route::middleware('auth:api')->group(function () {
+    Route::get('/organisateur', [OrganisateurController::class, 'getAuthenticatedOrganisateur']);
+    Route::get('/organisateur/user', [OrganisateurController::class, 'getByUserId']);
+    Route::get('/organisateur/{id}', [OrganisateurController::class, 'show']);
+    Route::get('/organisateurs', [OrganisateurController::class, 'index']);
+});
+
+// Route::get('/organisateurs/user/{id}', [OrganisateurController::class, 'getByUserId']);
 
 // Campagnes
 Route::middleware('auth:api')->group(function () {
     // Route::get('/campagnes', [CampagneController::class, 'index']);
+    Route::get('/mes-campagnes', [CampagneController::class, 'mesCampagnes']);
     Route::get('/campagnes/actives', [CampagneController::class, 'campagnesActives']);
     Route::get('/campagnes/passees', [CampagneController::class, 'campagnesPassées']);
     Route::get('/campagnes/validees', [CampagneController::class, 'campagnesValidees']);
@@ -124,10 +134,7 @@ Route::middleware('auth:api')->group(function () {
     Route::put('/participations/{id}/valider', [CampagneController::class, 'validerParticipation']);
 //route pour l'organisateur 
 
-Route::get('/organisateur', [OrganisateurController::class, 'getAuthenticatedOrganisateur']);
-Route::get('/organisateur/user', [OrganisateurController::class, 'getByUserId']);
-Route::get('/organisateur/{id}', [OrganisateurController::class, 'show']);
-Route::get('/organisateurs', [OrganisateurController::class, 'index']);
+
 
 
 
