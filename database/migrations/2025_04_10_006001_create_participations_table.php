@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -9,18 +10,20 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('participations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('donateur_id')->constrained('donateurs')->onDelete('cascade');
-            $table->foreignId('campagne_id')->constrained('campagnes')->onDelete('cascade');
-            $table->enum('statut', ['en attente', 'acceptée', 'refusée']);
-            $table->date('date_participation');
-            $table->string('lieu_participation');
-            $table->timestamps();
-        });
-    }
+public function up(): void
+{
+    Schema::create('participations', function (Blueprint $table) {
+        $table->id();
+        $table->foreignId('donateur_id')->constrained('donateurs')->onDelete('cascade');
+        $table->foreignId('campagne_id')->constrained('campagnes')->onDelete('cascade');
+        $table->enum('statut', ['en attente', 'acceptée', 'refusée']);
+        $table->integer('quantite')->default(1); // nombre de poches ou ml
+        $table->date('date_participation')->nullable();
+        $table->string('lieu_participation')->nullable();
+        $table->timestamps();
+    });
+}
+
 
     /**
      * Reverse the migrations.

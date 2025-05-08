@@ -13,6 +13,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
@@ -72,7 +73,8 @@ class AuthController extends Controller
             'nom' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'string', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
-            'type' => ['required', 'in:admin,donateur,organisateur,structure_transfusion_sanguin'],
+            // 'type' => ['required', 'in:admin,donateur,organisateur,structure_transfusion_sanguin'],
+            'type' => ['required', Rule::in(['admin', 'donateur', 'organisateur', 'structure_transfusion_sanguin'])],
             'telephone' => ['nullable', 'string', 'max:20'],
             'region_id' => ['nullable', 'exists:regions,id'],
             'adresse' => ['nullable', 'string'],
@@ -137,7 +139,7 @@ class AuthController extends Controller
                 Log::info('Organisateur créé', ['user_id' => $user->id]);
                 return response()->json(['user' => $user, 'organisateur' => $organisateur], 201);
 
-            case 'structure':
+            case 'structure_transfusion_sanguin':
                 $structure = StructureTransfusionSanguin::create([
                     'user_id' => $user->id,
                     'nom_responsable' => $request->input('nom_responsable'),
@@ -145,7 +147,7 @@ class AuthController extends Controller
                     'type_entite' => $request->input('type_entite'),
                 ]);
                 Log::info('Structure créée', ['user_id' => $user->id]);
-                return response()->json(['user' => $user, 'structure' => $structure], 201);
+                return response()->json(['user' => $user, 'structure_transfusion_sanguin' => $structure], 201);
 
             default:
                 Log::error('Type utilisateur inconnu', ['type' => $role]);

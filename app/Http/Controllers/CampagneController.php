@@ -191,11 +191,10 @@ class CampagneController extends Controller
             'Heure_fin' => 'required|date_format:H:i|after:Heure_debut',
             'participant' => 'required|integer|min:1',
             'statut' => 'required|string',
-            'structure_transfusion_sanguin_id' => 'required|exists:structure_transfusion_sanguin,id',
+            'structure_transfusion_sanguin_id' => 'required|exists:structure_transfusion_sanguins,id',
         ]);
-        $campagne = Campagne::create($request->all());
         $campagne = new Campagne($validated);
-        // $campagne->organisateur_id = $organisateur->id;
+        $campagne->organisateur_id = $organisateur->id;
         $campagne->save();
 
         return response()->json([

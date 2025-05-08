@@ -27,5 +27,5 @@ class Donateur extends Model
     {
         return $this->belongsTo(User::class);
     }
-
+    
 }

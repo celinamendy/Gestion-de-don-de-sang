@@ -8,12 +8,13 @@ use App\Http\Controllers\Api\StructureTransfusionController;
 use App\Http\Controllers\CampagneController;
 use App\Http\Controllers\CampagneStructureController;
 // use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\Banque_sangController;
+use App\Http\Controllers\API\BanqueDeSangController;
 use App\Http\Controllers\DemandeRavitaillementController;
 use App\Http\Controllers\API\DashboardController;
 use App\Http\Controllers\API\OrganisateurController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\API\DashboardDonateurController;
+use App\Http\Controllers\Api\DashboardOrganisateurController;
 
 
 // Routes pour l'enregistrement et la connexion (publiques)
@@ -28,6 +29,32 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/refresh-token', [AuthController::class, 'refresh'])->name('refresh'); // Corrigé: refresh au lieu de refreshToken
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
 });
+// route pour Dashboard Organisateur 
+Route::middleware(['auth:api'])->prefix('dashboard-organisateur')->group(function () {
+    Route::get('/statistiques', [DashboardOrganisateurController::class, 'statistiquesGenerales']);
+    Route::get('/campagnes/actives', [DashboardOrganisateurController::class, 'campagnesActives']);
+    Route::get('/campagnes/avenir', [DashboardOrganisateurController::class, 'campagnesAvenir']);
+    Route::get('/campagnes/passees', [DashboardOrganisateurController::class, 'campagnesPassees']);
+    // Route::get('/demandes/urgentes', [DashboardOrganisateurController::class, 'demandesUrgentes']);
+    Route::get('/campagnes-par-mois', [DashboardOrganisateurController::class, 'campagnesParMois']);
+    Route::get('/donneurs-par-groupe', [DashboardOrganisateurController::class, 'donneursParGroupe']);
+    Route::get('/dashboard-organisateur/demandes-urgentes', [DashboardOrganisateurController::class, 'demandesUrgentes']);
+
+});
+// Route pour les opérations CRUD sur les banques de sang
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/banques', [BanqueDeSangController::class, 'index']);
+    Route::post('/banques', [BanqueDeSangController::class, 'store']);
+    Route::get('/banques/{id}', [BanqueDeSangController::class, 'show']);
+    Route::put('/banques/{id}', [BanqueDeSangController::class, 'update']);
+    Route::delete('/banques/{id}', [BanqueDeSangController::class, 'destroy']);
+});
+
+
+
+
+
+
 // Routes pour les opérations CRUD sur les donateurs
 
 // // Récupérer le donateur connecté (nécessite authentification avec token)
@@ -73,7 +100,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/dashboard', [DashboardDonateurController::class, 'index']);
     Route::get('/dashboard/user', [DashboardDonateurController::class, 'dashboardDonateur']);
     Route::get('/campagnes/avenir', [DashboardDonateurController::class, 'campagnesAVenir']);
-    Route::post('/campagnes/{id}/inscription', [DashboardDonateurController::class, 'inscriptionCampagne']);
     Route::get('/dashboard/historique', [DashboardDonateurController::class, 'historiqueDons']);
     Route::get('/dashboard/verifier', [DashboardDonateurController::class, 'verifierEligibilite']);
     Route::post('/dashboard/tester', [DashboardDonateurController::class, 'lancerTestEligibilite']);
@@ -95,10 +121,13 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/participations/historiques', [ParticipationController::class, 'historiquecampagnes']);
     Route::get('/participations/campagne/{campagneId}/donateurs', [ParticipationController::class, 'donateursParCampagne']);
+    // Route pour inscrire un donateur à une campagne
+    Route::post('/campagnes/{campagneId}/inscription', [ParticipationController::class, 'inscriptionCampagne']);
+
 });
 
 
-    Route::apiResource('banques', App\Http\Controllers\Banque_sangController::class);
+    // Route::apiResource('banques', App\Http\Controllers\Banque_sangController::class);
     Route::apiResource('demandes', DemandeRavitaillementController::class);
 
 
@@ -118,6 +147,10 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware('auth:api')->group(function () {
     // Route::get('/campagnes', [CampagneController::class, 'index']);
     Route::get('/mes-campagnes', [CampagneController::class, 'mesCampagnes']);
+
+    Route::get('/campagnes/{id}', [CampagneController::class, 'show']);
+    Route::get('/campagnes/{campagneId}/donateurs', [ParticipationController::class, 'donateursDeMaCampagne']);
+
     Route::get('/campagnes/actives', [CampagneController::class, 'campagnesActives']);
     Route::get('/campagnes/passees', [CampagneController::class, 'campagnesPassées']);
     Route::get('/campagnes/validees', [CampagneController::class, 'campagnesValidees']);

@@ -20,7 +20,7 @@ class StructureTransfusionSanguin extends Model
 // Structure appartient à un banque de sang
     public function banque()
     {
-        return $this->hasMany(BanqueDeSang::class);
+        return $this->hasMany(BanqueSang::class);
     }
 // Structure appartient à un utilisateur (Admin ou autre rôle)
     public function user()

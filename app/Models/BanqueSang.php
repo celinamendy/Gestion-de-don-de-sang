@@ -10,7 +10,7 @@ class BanqueSang extends Model
 // Cette banque appartient à une structure de transfusion sanguine
     public function structure()
     {
-        return $this->belongsTo(Structure_transfusion_sanguin::class);
+        return $this->belongsTo(StructureTransfusionSanguin::class);
     }
 // Cette banque appartient à une groupe sanguin
     public function groupe_sanguin()

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->date('date_demande');
             $table->integer('quantite');
-            $table->enum('statut', ['en attente', 'approuvée', 'rejetée'])->default('en attente');
+            $table->enum('statut', ['en attente', 'approuvée', 'rejetée','urgence'])->default('urgence');
         
             $table->unsignedBigInteger('structure_transfusion_sanguin_id');
             // $table->unsignedBigInteger('structure_transfusion_sang_destinataire_id');

@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'Admin']);
         $donateurRole = Role::firstOrCreate(['name' => 'Donateur']);
         $organisateurRole = Role::firstOrCreate(['name' => 'Organisateur']);
-        $structureRole = Role::firstOrCreate(['name' => 'Structure de transfusion sanguine']);
+        $structureRole = Role::firstOrCreate(['name' => 'Structure_transfusion_sanguin']);
 
         // Admin
         $admin = User::create([
@@ -60,7 +60,7 @@ class UserSeeder extends Seeder
         $organisateur->assignRole($organisateurRole);
 
         // Structure de transfusion sanguine
-        $structureUser = User::create([
+        $structure = User::create([
             'nom' => 'Centre National',
             'telephone' => 770000004,
             'email' => 'structure@gmail.com',
@@ -69,7 +69,7 @@ class UserSeeder extends Seeder
             'region_id' => 4, // Assurez-vous que la région avec l'ID 1 existe
             'remember_token' => Str::random(10),
         ]);
-        $structureUser->assignRole($structureRole);
+        $structure->assignRole($structureRole);
     }
 }
 
