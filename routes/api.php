@@ -93,6 +93,7 @@ Route::delete('/donateurs/{donateur}', [DonateurController::class, 'destroy']);
 
 // Dashboard donateur (étendu)
 Route::get('/donateur/dashboard', [DonateurController::class, 'dashboardDonateur']);
+
 });
 Route::middleware('auth:api')->group(function () {
     // Mini dashboard
@@ -123,7 +124,8 @@ Route::middleware(['auth:api'])->group(function () {
     Route::get('/participations/campagne/{campagneId}/donateurs', [ParticipationController::class, 'donateursParCampagne']);
     // Route pour inscrire un donateur à une campagne
     Route::post('/campagnes/{campagneId}/inscription', [ParticipationController::class, 'inscriptionCampagne']);
-
+    Route::put('/donateurs/{id}/informations-medicales', [ParticipationController::class, 'mettreAJourInformations']);
+    Route::get('/donateurs/{id}/eligibilite', [ParticipationController::class, 'verifierEligibilite']);
 });
 
 
@@ -189,51 +191,3 @@ Route::middleware(['auth:api'])->group(function () {
 });
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Route pour récupérer le donateur connecté
-// Route::get('donateur/user', [DonateurController::class, 'getByUser'])->middleware('auth:api');
-// Route::apiResource('/donateurs', DonateurController::class);
-
-// //  Routes protégées avec JWT
-// Route::middleware('auth:api')->group(function () {
-//     Route::get('/profile', [AuthController::class, 'profile']);
-//     Route::post('/logout', [AuthController::class, 'logout']);
-
-    //  (Facultatif) Rafraîchir le token
-    // Route::post('/refresh', [AuthController::class, 'refresh']);
-
-    // //  Routes RESTful pour les modèles
-    // Route::apiResource('/donateurs', DonateurController::class);
-    // Route::apiResource('/organisateurs', OrganisateurController::class);
-    // Route::apiResource('/structures-transfusion', StructureTransfusionController::class);
-
-
-    // Route::get('donateurs/{id}/dons', [ParticipationController::class, 'historiqueDons']);
-// Route::get('donateurs/{id}/campagnes', [ParticipationController::class, 'historiqueCampagnes']);
-// Route::apiResource('participations', ParticipationController::class);
-
-// Route::get('/donateurs/{userId}/dons', [ParticipationController::class, 'historiqueDons']);
-
-
-
-// Routes pour les opérations crud sur les organisateurs
-// Route::apiResource('organisateurs', OrganisateurController::class);
-
-// Routes pour les opérations crud sur les structures de transfusion sanguine   
-
-// Routes pour les notifications
-    // Route::apiResource('notification', NotificationsController::class);
-    // Route::get('/notifications', [NotificationController::class, 'getUserNotification']);
-    // Route::post('/notificationsend', [NotificationController::class, 'sendNotification']);

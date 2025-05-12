@@ -88,6 +88,20 @@ class CampagneController extends Controller
 //     }
 // }
 
+public function campagnesAVenir()
+{
+    $today = Carbon::today();
+    $campagnes = Campagne::where('date_debut', '>', $today)
+        ->orderBy('date_debut', 'asc')
+        ->with('organisateur')
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Liste des campagnes à venir récupérée avec succès.',
+        'data' => $campagnes
+    ], 200);
+}
 
     public function campagnesActives()
     {

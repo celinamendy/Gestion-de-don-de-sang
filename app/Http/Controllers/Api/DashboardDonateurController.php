@@ -78,17 +78,18 @@ class DashboardDonateurController extends Controller
     /**
      * Retourne la liste des campagnes à venir
      */
-    public function campagnesAVenir()
-    {
-        $campagnes = Campagne::where('date_debut', '>=', Carbon::now())
-            ->orderBy('date_debut', 'asc')
-            ->get();
+   public function campagnesAVenir(Request $request)
+{
+   
 
-        return response()->json([
-            'status' => true,
-            'campagnes' => $campagnes,
-        ]);
-    }
+    // Récupérer les campagnes dont la date de début est après la date actuelle
+    $campagnes = Campagne::where('date_debut', '>', now()) // Comparer la date_debut avec la date actuelle
+                        ->orderBy('date_debut', 'asc') // Trier par date_debut croissante
+                        ->get();
+
+    return response()->json($campagnes);
+}
+
 
     /**
      * Permet au donateur de s'inscrire à une campagne
