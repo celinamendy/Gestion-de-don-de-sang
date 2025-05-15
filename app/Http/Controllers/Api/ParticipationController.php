@@ -8,6 +8,7 @@ use App\Models\Donateur;
 use App\Models\Participation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ParticipationController extends Controller
 {
@@ -49,80 +50,161 @@ public function verifierEligibilite($donateurId)
 
     $problemes = [];
 
-    // Vérifier l'âge
-    $age = Carbon::parse($donateur->date_de_naissance)->age;
-    if ($age < 18 || $age > 60) {
-        $problemes[] = "L'âge doit être entre 18 et 60 ans.";
+    // Chemin complet vers le fichier JSON
+    $cheminFichierEligibilite = storage_path('app/eligibilite.json');
+
+    // Charger les règles d'éligibilité depuis le fichier JSON
+    try {
+        // Vérifier si le fichier existe
+        if (!file_exists($cheminFichierEligibilite)) {
+            throw new \Exception('Le fichier de règles d\'éligibilité n\'existe pas.');
+        }
+
+        // Lire le contenu du fichier
+        $contenuJson = file_get_contents($cheminFichierEligibilite);
+        
+        // Décoder le JSON
+        $regles = json_decode($contenuJson, true);
+        
+        // Vérifier si le décodage a réussi
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \Exception('Erreur de parsing du fichier JSON : ' . json_last_error_msg());
+        }
+
+        // Vérifier si les règles sont vides
+        if (empty($regles)) {
+            throw new \Exception('Les règles d\'éligibilité sont vides.');
+        }
+    } catch (\Exception $e) {
+        // Log de l'erreur
+        \Log::error('Erreur de chargement des règles d\'éligibilité : ' . $e->getMessage());
+
+        return [
+            'est_eligible' => false,
+            'problemes' => ['Erreur système dans la vérification d\'éligibilité.']
+        ];
     }
 
-    // Vérifier le poids
-    if ($donateur->poids < 50) {
-        $problemes[] = "Le poids doit être supérieur ou égal à 50 kg.";
+    // Normaliser le sexe
+    $sexe = strtolower($donateur->sexe);
+    if ($sexe === 'h') {
+        $sexe = 'homme';
+    } elseif ($sexe === 'f') {
+        $sexe = 'femme';
     }
 
-    // Vérifier la date du dernier don
-    $dernierDon = Carbon::parse($donateur->date_dernier_don);
-    $maintenant = Carbon::now();
-    $diff = $dernierDon->diffInDays($maintenant);
-
-    if ($donateur->sexe === 'homme' && $diff < 90) {
-        $problemes[] = "Il faut attendre au moins 90 jours entre deux dons.";
+    // Vérification du sexe
+    if (!isset($regles[$sexe])) {
+        return [
+            'est_eligible' => false,
+            'problemes' => ["Sexe non reconnu dans les règles d'éligibilité. Vous devez être du sexe 'femme' ou 'homme'."]
+        ];
     }
 
-    if ($donateur->sexe === 'femme' && $dernierDon->diffInMonths($maintenant) < 3) {
-        $problemes[] = "Il faut attendre au moins 3 mois entre deux dons.";
-    }
+    $regleSexe = $regles[$sexe];
 
-    return response()->json([
-        'est_eligible' => empty($problemes),
-        'problemes' => $problemes,
-    ]);
+    // Vérification de l'âge
+    $age = Carbon::parse($donateur->date_naissance)->age;
+    // dd($donateur->date_de_naissance);
+    if (!$donateur->date_naissance) {
+    $problemes[] = "Date de naissance manquante. Veuillez compléter votre profil.";
+} else {
+    $age = Carbon::parse($donateur->date_naissance)->age;
+    if ($age < $regleSexe['age']['min'] || $age > $regleSexe['age']['max']) {
+        $problemes[] = "Votre âge doit être compris entre {$regleSexe['age']['min']} et {$regleSexe['age']['max']} ans pour être éligible à cette campagne.";
+    }
 }
 
-    public function inscriptionCampagne($campagneId)
-    {
-        $donateur = Auth::user()->donateur;
-    
-        if (!$donateur) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Aucun donateur lié à cet utilisateur.'
-            ], 404);
-        }
-    
-        $campagne = Campagne::find($campagneId);
-    
-        if (!$campagne) {
-            return response()->json([
-                'status' => false,
-                'message' => "Campagne non trouvée."
-            ], 404);
-        }
-    
-        // ✅ Utilisation correcte de $donateur
-        $already = Participation::where('donateur_id', $donateur->id)
-            ->where('campagne_id', $campagneId)
-            ->exists();
-    
-        if ($already) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Vous êtes déjà inscrit à cette campagne.'
-            ], 409);
-        }
-    
-        $participation = Participation::create([
-            'donateur_id' => $donateur->id,
-            'campagne_id' => $campagne->id,
-            'statut' => 'en attente',
-        ]);
-    
-        return response()->json([
-            'status' => true,
-            'message' => "Inscription réussie à la campagne.",
-            'data' => $participation,
-        ], 201);
+
+    // Vérification du poids
+    if ($donateur->poids < $regleSexe['poids_min']) {
+        $problemes[] = "Le poids doit être supérieur ou égal à {$regleSexe['poids_min']} kg pour que vous soyez reconnu(e) comme éligible à cette campagne.";
     }
+
+    // Vérification de l'intervalle depuis le dernier don
+    if ($donateur->date_dernier_don) {
+        $dernierDon = Carbon::parse($donateur->date_dernier_don);
+        $maintenant = Carbon::now();
+
+        $jours = $dernierDon->diffInDays($maintenant);
+        if ($jours < $regleSexe['intervalle_don_jours']) {
+            $problemes[] = "Il faut attendre au moins {$regleSexe['intervalle_don_jours']} jours entre deux dons pour pouvoir faire un don.";
+        }
+    }
+
+    return [
+        'est_eligible' => empty($problemes),
+        'problemes' => $problemes,
+    ];
+}
+
+public function inscriptionCampagne(Request $request, $campagneId)
+{
+    $donateur = Auth::user()->donateur;
+    
+    if (!$donateur) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Aucun donateur lié à cet utilisateur.'
+        ], 404);
+    }
+    
+    $campagne = Campagne::find($campagneId);
+    
+    if (!$campagne) {
+        return response()->json([
+            'status' => false,
+            'message' => "Campagne non trouvée."
+        ], 404);
+    }
+
+    // Vérification de l'éligibilité
+    $eligibilite = $this->verifierEligibilite($donateur->id);
+    
+    if (!$eligibilite['est_eligible']) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Vous ne pouvais  pas vous inscrire à cette campagne car vous n\'etes pas éligible.',
+            'problemes' => $eligibilite['problemes']
+        ], 403);
+    }
+
+    // Vérification de l'inscription existante
+    $already = Participation::where('donateur_id', $donateur->id)
+        ->where('campagne_id', $campagneId)
+        ->exists();
+
+    if ($already) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Vous êtes déjà inscrit à cette campagne.'
+        ], 409);
+    }
+    // Vérification de la date de fin de la campagne
+   $date_fin = Carbon::parse($campagne->date_fin . ' ' . $campagne->Heure_fin); // Fusionne date et heure
+    $dateActuelle = Carbon::now();
+
+    if ($dateActuelle->greaterThan($date_fin)) {
+        return response()->json([
+            'status' => false,
+            'message' => 'La campagne est déjà terminée.'
+        ], 400);
+    }
+
+
+    // Création de la participation
+    $participation = Participation::create([
+        'donateur_id' => $donateur->id,
+        'campagne_id' => $campagne->id,
+        'statut' => 'en attente',
+    ]);
+
+    return response()->json([
+        'status' => true,
+        'message' => "Inscription réussie à la campagne.",
+        'data' => $participation,
+    ], 201);
+}
     
 
 

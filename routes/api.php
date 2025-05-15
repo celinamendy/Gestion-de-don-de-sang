@@ -6,7 +6,6 @@ use App\Http\Controllers\Api\DonateurController;
 use App\Http\Controllers\Api\ParticipationController;
 use App\Http\Controllers\Api\StructureTransfusionController;
 use App\Http\Controllers\CampagneController;
-use App\Http\Controllers\CampagneStructureController;
 // use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\API\BanqueDeSangController;
 use App\Http\Controllers\DemandeRavitaillementController;
@@ -15,6 +14,7 @@ use App\Http\Controllers\API\OrganisateurController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\API\DashboardDonateurController;
 use App\Http\Controllers\Api\DashboardOrganisateurController;
+use App\Http\Controllers\CampagneStructureController;
 
 
 // Routes pour l'enregistrement et la connexion (publiques)
@@ -22,6 +22,7 @@ Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::middleware('auth:api')->get('/user-info', [UserController::class, 'getUserInfo']);
 
+// Route::apiResource('demandes', DemandeRavitaillementController::class);
 
 // Routes protégées par authentification
 Route::middleware('auth:api')->group(function () {
@@ -33,12 +34,17 @@ Route::middleware('auth:api')->group(function () {
 Route::middleware(['auth:api'])->prefix('dashboard-organisateur')->group(function () {
     Route::get('/statistiques', [DashboardOrganisateurController::class, 'statistiquesGenerales']);
     Route::get('/campagnes/actives', [DashboardOrganisateurController::class, 'campagnesActives']);
-    Route::get('/campagnes/avenir', [DashboardOrganisateurController::class, 'campagnesAvenir']);
+    Route::get('/campagnes/avenir', [DashboardOrganisateurController::class, 'campagnesAVenir']);
     Route::get('/campagnes/passees', [DashboardOrganisateurController::class, 'campagnesPassees']);
     // Route::get('/demandes/urgentes', [DashboardOrganisateurController::class, 'demandesUrgentes']);
     Route::get('/campagnes-par-mois', [DashboardOrganisateurController::class, 'campagnesParMois']);
     Route::get('/donneurs-par-groupe', [DashboardOrganisateurController::class, 'donneursParGroupe']);
-    Route::get('/dashboard-organisateur/demandes-urgentes', [DashboardOrganisateurController::class, 'demandesUrgentes']);
+    // Route::get('/dashboard-organisateur/demandes-urgentes', [DashboardOrganisateurController::class, 'demandesUrgentes']);
+    Route::get('/taux-participation', [DashboardOrganisateurController::class, 'tauxParticipation']);
+    Route::get('/organisateur/demandes', [DashboardOrganisateurController::class, 'demandesParOrganisateurConnecte']);
+    Route::get('/campagnes-par-statut', [DashboardOrganisateurController::class, 'repartitionStatutsCampagnes']);
+    Route::get('/dons-par-mois', [DashboardOrganisateurController::class, 'donsParMois']);
+    Route::get('/dons-par-region', [DashboardOrganisateurController::class, 'donsParRegion']);
 
 });
 // Route pour les opérations CRUD sur les banques de sang
@@ -104,6 +110,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/dashboard/historique', [DashboardDonateurController::class, 'historiqueDons']);
     Route::get('/dashboard/verifier', [DashboardDonateurController::class, 'verifierEligibilite']);
     Route::post('/dashboard/tester', [DashboardDonateurController::class, 'lancerTestEligibilite']);
+    
 });
 
 // Récupérer un donateur par l'ID de l'utilisateur
@@ -131,6 +138,7 @@ Route::middleware(['auth:api'])->group(function () {
 
     // Route::apiResource('banques', App\Http\Controllers\Banque_sangController::class);
     Route::apiResource('demandes', DemandeRavitaillementController::class);
+    // Route::get('/demandes-urgentes/{statut}', [DemandeRavitaillementController::class, 'demandesUrgentesParStatut']);
 
 
     Route::get('/campagnes', [CampagneController::class, 'getAllCampagnes']); // accès public

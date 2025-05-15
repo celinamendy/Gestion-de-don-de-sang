@@ -19,7 +19,10 @@ class Organisateur extends Model
     {
         return $this->belongsTo(User::class);
     }
-
+    public function structure()
+    {
+        return $this->hasOne(StructureTransfusionSanguin::class, 'user_id', 'user_id');
+    }
  
     public function admin()
     {

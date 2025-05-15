@@ -28,8 +28,18 @@ class StructureTransfusionSanguin extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function demandes_ravitaillement()
+    // public function organisateur()
+    // {
+    //     return $this->belongsTo(Organisateur::class);
+    // }
+
+    public function demandesRavitaillementEnvois()
     {
-        return $this->hasMany(Demande_ravitaillement::class, 'sts_demandeur_id');
+        return $this->hasMany(DemandeRavitaillement::class, 'sts_demandeur_id');
+    }
+
+    public function demandesRavitaillementRecus()
+    {
+        return $this->hasMany(DemandeRavitaillement::class, 'sts_destinataire_id');
     }
 }

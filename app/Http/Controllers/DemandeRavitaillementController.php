@@ -13,23 +13,34 @@ class DemandeRavitaillementController extends Controller
         $demandes = DemandeRavitaillement::all();
         return response()->json($demandes);
     }
+    // public function indexParOrganisateur()
+    // {
+    //     $user = auth()->user();
+
+    //     if (!$user->organisateur_id) {
+    //         return response()->json(['message' => 'Non autorisé'], 403);
+    //     }
+
+    //         $demandes = Demande::where('organisateur_id', $user->organisateur_id)->get();
+    //     return response()->json($demandes);
+    // }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'date_demande' => 'required|date',
-            'quantite' => 'required|integer|min:1',
-            'statut' => 'in:en attente,approuvée,rejetée',
-            'structure_transfusion_sang_id' => 'required|exists:structure_transfusion_sanguins,id',
-        ]);
+       $request->validate([
+        'date_demande' => 'required|date',
+        'quantite' => 'required|integer|min:1',
+        'statut' => 'required|in:en attente,approuvée,rejetée,urgence',
+        'groupe_sanguin_id' => 'nullable|exists:groupe_sanguins,id',
+        'sts_demandeur_id' => 'required|exists:structure_transfusion_sanguins,id',
+        'sts_destinataire_id' => 'nullable|exists:structure_transfusion_sanguins,id',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
+    $demande = DemandeRavitaillement::create($request->all());
 
-        $demande = DemandeRavitaillement::create($request->all());
-        return response()->json($demande, 201);
-    }
+    return response()->json($demande, 201);
+}
+    
 
     public function show($id)
     {
@@ -50,8 +61,10 @@ class DemandeRavitaillementController extends Controller
         $validator = Validator::make($request->all(), [
             'date_demande' => 'sometimes|date',
             'quantite' => 'sometimes|integer|min:1',
-            'statut' => 'sometimes|in:en attente,approuvée,rejetée',
-            'structure_transfusion_sang_id' => 'sometimes|exists:structure_transfusion_sanguins,id',
+            'statut' => 'sometimes|in:en attente,approuvée,rejetée','urgence',
+            'groupe_sanguin_id' => 'sometimes|exists:groupe_sanguins,id',
+            'sts_demandeur_id' => 'sometimes|exists:structure_transfusion_sanguins,id',
+            'sts_destinataire_id' => 'sometimes|exists:structure_transfusion_sanguins,id',
         ]);
 
         if ($validator->fails()) {
@@ -72,4 +85,5 @@ class DemandeRavitaillementController extends Controller
         $demande->delete();
         return response()->json(['message' => 'Demande supprimée avec succès']);
     }
+    
 }

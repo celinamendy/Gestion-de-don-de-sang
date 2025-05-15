@@ -10,33 +10,32 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-        Schema::create('demande_ravitaillements', function (Blueprint $table) {
-            $table->id();
-            $table->date('date_demande');
-            $table->integer('quantite');
-            $table->enum('statut', ['en attente', 'approuvée', 'rejetée','urgence'])->default('urgence');
-        
-            $table->unsignedBigInteger('structure_transfusion_sanguin_id');
-            // $table->unsignedBigInteger('structure_transfusion_sang_destinataire_id');
-        
-            // Foreign key avec noms plus courts
-            // $table->foreign('structure_transfusion_sang_id')
-            //     ->references('id')->on('structure_transfusion_sang')
-            //     ->onDelete('cascade');
-        
-            
-        
-            $table->timestamps();
-        });
-        
-    }
+{
+    Schema::create('demande_ravitaillements', function (Blueprint $table) {
+        $table->id();
+        $table->date('date_demande');
+        $table->integer('quantite');
+        $table->enum('statut', ['en attente', 'approuvée', 'rejetée','urgence'])->default('urgence');
+
+        // Foreign keys pour le demandeur et destinataire
+        $table->foreignId('sts_demandeur_id')->constrained('structure_transfusion_sanguins')->onDelete('cascade');
+        $table->foreignId('sts_destinataire_id')->nullable()->constrained('structure_transfusion_sanguins')->onDelete('set null');
+
+        // Groupe sanguin si nécessaire (optionnel)
+        $table->foreignId('groupe_sanguin_id')->nullable()->constrained('groupe_sanguins')->onDelete('set null');
+
+        $table->timestamps();
+    });
+}
+
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('demande_ravitaillements');
+        Schema::table('demande_ravitaillements', function (Blueprint $table) {
+            //
+        });
     }
 };
