@@ -4,17 +4,20 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DonateurController;
 use App\Http\Controllers\Api\ParticipationController;
-use App\Http\Controllers\Api\StructureTransfusionController;
+// use App\Http\Controllers\Api\StructureTransfusionController;
+use App\Http\Controllers\API\StructureTransfusionSanguinController;
 use App\Http\Controllers\CampagneController;
 // use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\API\BanqueDeSangController;
+use App\Http\Controllers\API\RegionController;
+use App\Http\Controllers\Api\GroupeSanguinController;
 use App\Http\Controllers\DemandeRavitaillementController;
 use App\Http\Controllers\API\DashboardController;
 use App\Http\Controllers\API\OrganisateurController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\API\DashboardDonateurController;
 use App\Http\Controllers\Api\DashboardOrganisateurController;
-use App\Http\Controllers\CampagneStructureController;
+// use App\Http\Controllers\CampagneStructureController;
 
 
 // Routes pour l'enregistrement et la connexion (publiques)
@@ -23,7 +26,7 @@ Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::middleware('auth:api')->get('/user-info', [UserController::class, 'getUserInfo']);
 
 // Route::apiResource('demandes', DemandeRavitaillementController::class);
-
+Route::apiResource('structures', StructureTransfusionSanguinController::class);
 // Routes protégées par authentification
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -112,6 +115,13 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/dashboard/tester', [DashboardDonateurController::class, 'lancerTestEligibilite']);
     
 });
+// Route pour les regions 
+// Route::middleware('auth:api')->group(function(){
+
+// });
+Route::apiResource('regions', RegionController::class);
+// Route pour les groupe sanguin 
+Route::apiResource('groupe-sanguins',GroupeSanguinController::class);
 
 // Récupérer un donateur par l'ID de l'utilisateur
 // Route::get('/donateurs/utilisateur/{userId}', [DonateurController::class, 'getDonateurByUserId']);

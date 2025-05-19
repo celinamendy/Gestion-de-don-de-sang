@@ -65,50 +65,71 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        //  dd($request->all());
-
         Log::info('Tentative d\'inscription', ['type' => $request->type, 'email' => $request->email]);
 
-        $validator = Validator::make($request->all(), [
+        $type = $request->input('type');
+
+        // Base des règles
+        $rules = [
             'nom' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'string', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
-            // 'type' => ['required', 'in:admin,donateur,organisateur,structure_transfusion_sanguin'],
             'type' => ['required', Rule::in(['admin', 'donateur', 'organisateur', 'structure_transfusion_sanguin'])],
             'telephone' => ['nullable', 'string', 'max:20'],
-            'region_id' => ['nullable', 'exists:regions,id'],
-            'adresse' => ['nullable', 'string'],
-            'sexe' => ['nullable', 'in:M,F'],
-            'date_naissance' => ['nullable', 'date'],
-            'poids' => ['nullable', 'numeric'],
-            'antecedent_medicament' => ['nullable', 'string'],
-            'date_dernier_don' => ['nullable', 'date'],
-            'groupe_sanguin_id' => ['nullable', 'exists:groupe_sanguin,id'],
-            'nom_responsable' => ['nullable', 'string'],
-            'type_organisation' => ['nullable', 'string'],
-            'type_entite' => ['nullable', 'string'],
-            'structure_transfusion_sanguin_id' => ['nullable', 'exists:structure_transfusion_sanguins,id'],
-        ]);
+            'region_id' => ['required', 'exists:regions,id'],
+        ];
+
+        // Règles supplémentaires selon le type
+        if ($type === 'donateur') {
+            $rules = array_merge($rules, [
+                'adresse' => ['nullable', 'string'],
+                'sexe' => ['nullable', 'in:M,F'],
+                'date_naissance' => ['nullable', 'date'],
+                'poids' => ['nullable', 'numeric'],
+                'antecedent_medicament' => ['nullable', 'string'],
+                'date_dernier_don' => ['nullable', 'date'],
+                'groupe_sanguin_id' => ['required', 'exists:groupe_sanguins,id'],
+            ]);
+        }
+
+        if ($type === 'organisateur') {
+            $rules = array_merge($rules, [
+                'adresse' => ['nullable', 'string'],
+                'nom_responsable' => ['nullable', 'string'],
+                'type_organisation' => ['nullable', 'string'],
+                'structure_transfusion_sanguin_id' => ['required', 'exists:structure_transfusion_sanguins,id'],
+            ]);
+        }
+
+        if ($type === 'structure_transfusion_sanguin') {
+            $rules = array_merge($rules, [
+                'adresse' => ['nullable', 'string'],
+                'nom_responsable' => ['nullable', 'string'],
+                'type_entite' => 'required|in:hôpital,poste de santé,Clinique,autre',
+            ]);
+        }
+
+        $validator = Validator::make($request->all(), $rules);
 
         if ($validator->fails()) {
-            Log::warning('Échec de validation à l\'inscription', ['errors' => $validator->errors()]);
+            Log::warning('Échec de validation', ['errors' => $validator->errors()]);
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // Création de l'utilisateur
         $user = User::create([
-            'nom' => $request->input('nom'),
-            'email' => $request->input('email'),
-            'password' => bcrypt($request->input('password')),
-            'telephone' => $request->input('telephone'),
-            'region_id' => $request->input('region_id'),
+            'nom' => $request->nom,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'telephone' => $request->telephone,
+            'region_id' => $request->region_id,
         ]);
 
+        $user->assignRole($type);
         Log::info('Utilisateur créé', ['user_id' => $user->id]);
 
-        $role = $request->input('type');
-        $user->assignRole($role);
-
-        switch ($role) {
+        // Création du profil selon le rôle
+        switch ($type) {
             case 'admin':
                 $admin = Admin::create(['user_id' => $user->id]);
                 Log::info('Admin créé', ['user_id' => $user->id]);
@@ -117,24 +138,31 @@ class AuthController extends Controller
             case 'donateur':
                 $donateur = Donateur::create([
                     'user_id' => $user->id,
-                    'adresse' => $request->input('adresse'),
-                    'sexe' => $request->input('sexe'),
-                    'date_naissance' => $request->input('date_naissance'),
-                    'poids' => $request->input('poids'),
-                    'antecedent_medicament' => $request->input('antecedent_medicament'),
-                    'date_dernier_don' => $request->input('date_dernier_don'),
-                    'groupe_sanguin_id' => $request->input('groupe_sanguins_id'),
+                    'adresse' => $request->adresse,
+                    'sexe' => $request->sexe,
+                    'date_naissance' => $request->date_naissance,
+                    'poids' => $request->poids,
+                    'antecedent_medicament' => $request->antecedent_medicament,
+                    'date_dernier_don' => $request->date_dernier_don,
+                    'groupe_sanguin_id' => $request->groupe_sanguin_id,
                 ]);
                 Log::info('Donateur créé', ['user_id' => $user->id]);
-                return response()->json(['user' => $user, 'donateur' => $donateur], 201);
+                return response()->json([
+                    'message' => 'Inscription réussie.',
+                    'data' => [
+                        'user' => $user,
+                        'donateur' => $donateur
+                    ]
+                ], 201);
+
 
             case 'organisateur':
                 $organisateur = Organisateur::create([
                     'user_id' => $user->id,
-                    'adresse' => $request->input('adresse'),
-                    'nom_responsable' => $request->input('nom_responsable'),
-                    'type_organisation' => $request->input('type_organisation'),
-                    'structure_transfusion_sanguin_id' => $request->input('structure_transfusion_sanguin_id'),
+                    'adresse' => $request->adresse,
+                    'nom_responsable' => $request->nom_responsable,
+                    'type_organisation' => $request->type_organisation,
+                    'structure_transfusion_sanguin_id' => $request->structure_transfusion_sanguin_id,
                 ]);
                 Log::info('Organisateur créé', ['user_id' => $user->id]);
                 return response()->json(['user' => $user, 'organisateur' => $organisateur], 201);
@@ -142,19 +170,18 @@ class AuthController extends Controller
             case 'structure_transfusion_sanguin':
                 $structure = StructureTransfusionSanguin::create([
                     'user_id' => $user->id,
-                    'nom_responsable' => $request->input('nom_responsable'),
-                    'adresse' => $request->input('adresse'),
-                    'type_entite' => $request->input('type_entite'),
+                    'adresse' => $request->adresse,
+                    'nom_responsable' => $request->nom_responsable,
+                    'type_entite' => $request->type_entite,
                 ]);
                 Log::info('Structure créée', ['user_id' => $user->id]);
                 return response()->json(['user' => $user, 'structure_transfusion_sanguin' => $structure], 201);
 
             default:
-                Log::error('Type utilisateur inconnu', ['type' => $role]);
+                Log::error('Type utilisateur inconnu', ['type' => $type]);
                 return response()->json(['message' => 'Type utilisateur non reconnu.'], 400);
         }
     }
-
     public function logout()
     {
         Log::info('Déconnexion de l\'utilisateur', ['user_id' => auth()->id()]);

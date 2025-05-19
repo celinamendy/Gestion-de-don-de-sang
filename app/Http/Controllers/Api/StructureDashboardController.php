@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class StructureDashboardController extends Controller
+
+ 
 {
     public function nombreDeCampagnes() {
     return Campagne::where('structure_transfusion_sanguin_id', auth()->user()->structure_id)->count();

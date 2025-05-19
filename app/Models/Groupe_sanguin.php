@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class Groupe_sanguin extends Model
 {
     protected $guarded = [];
+    
+    protected $table = 'groupe_sanguins';
 
     public function donateurs()
     {
@@ -15,6 +17,6 @@ class Groupe_sanguin extends Model
 
     public function banques()
     {
-        return $this->hasMany(BanqueDeSang::class);
+        return $this->hasMany(BanqueSang::class);
     }
 }
