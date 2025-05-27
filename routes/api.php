@@ -17,8 +17,8 @@ use App\Http\Controllers\API\OrganisateurController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\API\DashboardDonateurController;
 use App\Http\Controllers\Api\DashboardOrganisateurController;
-// use App\Http\Controllers\CampagneStructureController;
-
+use App\Http\Controllers\Api\StructureDashboardController;
+use App\Http\Controllers\Api\CampagneStructureController;
 
 // Routes pour l'enregistrement et la connexion (publiques)
 Route::post('/register', [AuthController::class, 'register'])->name('register');
@@ -27,6 +27,8 @@ Route::middleware('auth:api')->get('/user-info', [UserController::class, 'getUse
 
 // Route::apiResource('demandes', DemandeRavitaillementController::class);
 Route::apiResource('structures', StructureTransfusionSanguinController::class);
+Route::middleware('auth:api')->get('/structures-destinataires', [StructureTransfusionSanguinController::class, 'structuresDestinataires']);
+
 // Routes protégées par authentification
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -51,12 +53,36 @@ Route::middleware(['auth:api'])->prefix('dashboard-organisateur')->group(functio
 
 });
 // Route pour les opérations CRUD sur les banques de sang
+
 Route::middleware(['auth:api'])->group(function () {
-    Route::get('/banques', [BanqueDeSangController::class, 'index']);
-    Route::post('/banques', [BanqueDeSangController::class, 'store']);
-    Route::get('/banques/{id}', [BanqueDeSangController::class, 'show']);
-    Route::put('/banques/{id}', [BanqueDeSangController::class, 'update']);
-    Route::delete('/banques/{id}', [BanqueDeSangController::class, 'destroy']);
+
+Route::apiResource('banques', BanqueDeSangController::class);
+
+ });
+ Route::middleware(['auth:api'])->group(function () {
+    Route::apiResource('demandes', DemandeRavitaillementController::class);
+Route::get('/demandes-recues', [DemandeRavitaillementController::class, 'demandesReçues']);
+Route::get('/structures-destinataires', [DemandeRavitaillementController::class, 'structuresDestinataires']);
+Route::patch('/demandes/{id}/approuver', [DemandeRavitaillementController::class, 'approuver']);
+Route::patch('/demandes/{id}/rejeter', [DemandeRavitaillementController::class, 'rejeter']);
+// route::get('/structure/stocks', [BanqueDeSangController::class, 'stocks']);
+
+Route::get('/stocks', [DemandeRavitaillementController::class, 'index']);
+     });
+
+Route::middleware(['auth:api'])->prefix('structure')->group(function () {
+    Route::get('dashboard/campagnes', [StructureDashboardController::class, 'campagnes']);
+    Route::get('dashboard/statistiques', [StructureDashboardController::class, 'statistiquesGenerales']);
+    Route::get('dashboard/campagnes/actives', [StructureDashboardController::class, 'campagnesActives']);
+    Route::get('dashboard/campagnes/avenir', [StructureDashboardController::class, 'campagnesAVenir']);
+    Route::get('dashboard/campagnes/passees', [StructureDashboardController::class, 'campagnesPassees']);
+    Route::get('dashboard/campagnes/statuts', [StructureDashboardController::class, 'repartitionStatutsCampagnes']);
+    Route::get('dashboard/campagnes/mois', [StructureDashboardController::class, 'campagnesParMois']);
+    Route::get('dashboard/dons/mois', [StructureDashboardController::class, 'donsParMois']);
+    Route::get('dashboard/dons/region', [StructureDashboardController::class, 'donsParRegion']);
+    Route::get('dashboard/donneurs/groupesanguin', [StructureDashboardController::class, 'donneursParGroupe']);
+    Route::get('dashboard/taux/participation', [StructureDashboardController::class, 'tauxParticipation']);
+    Route::get('dashboard/demandes', [StructureDashboardController::class, 'demandesParStructure']);
 });
 
 
@@ -147,7 +173,7 @@ Route::middleware(['auth:api'])->group(function () {
 
 
     // Route::apiResource('banques', App\Http\Controllers\Banque_sangController::class);
-    Route::apiResource('demandes', DemandeRavitaillementController::class);
+    
     // Route::get('/demandes-urgentes/{statut}', [DemandeRavitaillementController::class, 'demandesUrgentesParStatut']);
 
 
@@ -197,14 +223,18 @@ Route::get('/campagnes/{id}/participants', [DashboardController::class, 'partici
 Route::get('/campagnes/{id}/demandes', [DashboardController::class, 'demandes']); // Récupérer les demandes liées à une campagne spécifique
 });
 Route::middleware(['auth:api'])->group(function () {
-    Route::get('/structure/campagnes', [CampagneStructureController::class, 'index']);
+    // Route::get('/structure/campagnes', [CampagneStructureController::class, 'index']);
     Route::post('/structure/campagnes', [CampagneStructureController::class, 'store']);
-    Route::get('/struture/{id}/campagnes', [CampagneController::class, 'getCampagnesByOrganisateurId']);
+    // Route::get('/struture/{id}/campagnes', [CampagneController::class, 'getCampagnesByOrganisateurId']);
     Route::get('/structure/campagnes/{id}', [CampagneStructureController::class, 'show']);
     Route::put('/structure/campagnes/{id}', [CampagneStructureController::class, 'update']);
     Route::delete('/structure/campagnes/{id}', [CampagneStructureController::class, 'destroy']);
-    Route::apiResource('structure', CampagneStructureController::class);
-    Route::get('/structures/organisateur/{id}', [StructureController::class, 'getByOrganisateur']);
+    // Route::apiResource('structure', CampagneStructureController::class);
+    // Route::get('/structures/organisateur/{id}', [StructureController::class, 'getByOrganisateur']);
+Route::get('/campagnes/structure/{id}', [CampagneController::class, 'getCampagnesByStructure']);
+    Route::get('/mes-campagnesStructure', [CampagneStructureController::class, 'getMesCampagnesStructure']);
+
+
 
 });
 

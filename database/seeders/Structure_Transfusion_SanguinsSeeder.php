@@ -17,7 +17,7 @@ class Structure_Transfusion_SanguinsSeeder extends Seeder
         $user = User::where('email', 'structure@gmail.com')->first();
 
         if ($user) {
-            $structures = [
+            $structure = [
                 [
                     'user_id' => $user->id,
                     'nom_responsable' => 'Dr Diouf',
@@ -31,11 +31,9 @@ class Structure_Transfusion_SanguinsSeeder extends Seeder
                     'adresse' => 'Pikine',
                 ],
             ];
+                StructureTransfusionSanguin::create($structure);
 
-            foreach ($structures as $structureData) {
-                StructureTransfusionSanguin::create($structureData);
-
-            }
+            
         }
     }
 }

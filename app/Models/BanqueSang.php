@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Groupe_sanguin;
 
 class BanqueSang extends Model
 {

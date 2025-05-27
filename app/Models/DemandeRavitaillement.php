@@ -4,6 +4,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\StructureTransfusionSanguin;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Groupe_sanguin;
+
+
 
 class DemandeRavitaillement extends Model
 
@@ -22,7 +25,7 @@ class DemandeRavitaillement extends Model
 
     public function groupeSanguin()
     {
-        return $this->belongsTo(GroupeSanguin::class, 'groupe_sanguin_id');
+        return $this->belongsTo(Groupe_sanguin::class, 'groupe_sanguin_id');
     }
 
 // App\Models\DemandeRavitaillement.php

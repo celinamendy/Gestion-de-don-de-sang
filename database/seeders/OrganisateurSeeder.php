@@ -23,7 +23,7 @@ class OrganisateurSeeder extends Seeder
                     'user_id' => $user->id,
                     'nom_responsable' => 'Dr Fall',
                     'adresse' => 'Dakar Plateau',
-                    'type_organisation' => 'ONG',
+                    'type_organisation' => 'Organisation non gouvernementale (ONG)',
                     'structure_transfusion_sanguin_id' => 1, // Assurez-vous que cet ID existe dans structures_transfusion_sanguine
 
                 ],

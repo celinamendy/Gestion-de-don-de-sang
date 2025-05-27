@@ -4,7 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\Campagne;
 class StructureTransfusionSanguin extends Model
 {
     
@@ -42,4 +42,28 @@ class StructureTransfusionSanguin extends Model
     {
         return $this->hasMany(DemandeRavitaillement::class, 'sts_destinataire_id');
     }
+
+
+    // Dans StructureTransfusionSanguin.php
+// public function getCampagnesByStructure($id)
+// {
+//     try {
+//         $campagnes = Campagne::with(['organisateur', 'structureTransfusion'])
+//             ->where('structure_transfusion_sanguin_id', $id)
+//             ->orderBy('date_debut', 'desc')
+//             ->get();
+
+//         return response()->json([
+//             'status' => 'success',
+//             'data' => $campagnes
+//         ]);
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'status' => 'error',
+//             'message' => 'Erreur lors de la récupération des campagnes',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
 }

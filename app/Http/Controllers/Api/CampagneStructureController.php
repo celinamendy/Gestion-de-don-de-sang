@@ -1,19 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
-
+namespace App\Http\Controllers\Api;
+use App\Http\Controllers\Controller;
 use App\Models\Campagne;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\StructureTransfusionSanguin;
-use App\Models\Organisateur;
-use App\Models\User;
-use App\Models\Donateur;
-use App\Models\Participation;
-use App\Models\Banque_sang;
-use App\Models\DemandeRavitaillement;
-use App\Models\Notification;
-use App\Models\Region;
+
 class CampagneStructureController extends Controller
 {
     /**
@@ -62,8 +54,8 @@ class CampagneStructureController extends Controller
             'lieu' => 'required|string|max:255',
             'date_debut' => 'required|date',
             'date_fin' => 'required|date|after_or_equal:date_debut',
-            'heure_debut' => 'required|date_format:H:i',
-            'heure_fin' => 'required|date_format:H:i|after:Heure_debut',
+            'Heure_debut' => 'required|date_format:H:i',
+            'Heure_fin' => 'required|date_format:H:i|after:Heure_debut',
             'participant' => 'required|integer|min:1',
             'statut' => 'required|string',
             'organisateur_id' => 'required|exists:organisateurs,id',
@@ -102,23 +94,6 @@ class CampagneStructureController extends Controller
             'data' => $campagne
         ], 200);
     }
-    /**
-     * Récupère une structure transfusion sanguine par l'ID de l'organisateur.
-     */
-    public function getByOrganisateur($id)
-{
-    $structure = StructureTransfusionSanguin::where('organisateur_id', $id)->first();
-
-    if (!$structure) {
-        return response()->json(['message' => 'Structure non trouvée.'], 404);
-    }
-
-    return response()->json([
-        'status' => true,
-        'data' => $structure
-    ]);
-}
-
 
     /**
      * Récupère les campagnes d'une structure spécifique par son ID.
@@ -142,6 +117,46 @@ class CampagneStructureController extends Controller
             'data' => $campagnes
         ], 200);
     }
+
+
+    public function getMesCampagnesStructure()
+{
+    $user = Auth::user();
+
+    // Vérifie que l'utilisateur a le rôle "Structure_transfusion_sanguin"
+    if (!$user->hasRole('Structure_transfusion_sanguin')) {
+        return response()->json([
+            'message' => 'Seules les structures peuvent consulter leurs campagnes.'
+        ], 403);
+    }
+
+    // Récupère la structure liée à l'utilisateur connecté
+    $structure = $user->structure;
+
+    if (!$structure) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Aucune structure liée à cet utilisateur.',
+        ], 404);
+    }
+
+    $campagnes = Campagne::where('structure_transfusion_sanguin_id', $structure->id)
+        ->with('organisateur')
+        ->get();
+
+    if ($campagnes->isEmpty()) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Aucune campagne trouvée pour votre structure.',
+        ], 404);
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Liste des campagnes pour votre structure.',
+        'data' => $campagnes
+    ], 200);
+}
 
     /**
      * Met à jour une campagne spécifique appartenant à la structure connectée.
@@ -170,8 +185,8 @@ class CampagneStructureController extends Controller
             'lieu' => 'nullable|string|max:255',
             'date_debut' => 'nullable|date',
             'date_fin' => 'nullable|date',
-            'heure_debut' => 'nullable|date_format:H:i',
-            'heure_fin' => 'nullable|date_format:H:i',
+            'Heure_debut' => 'nullable|date_format:H:i',
+            'Heure_fin' => 'nullable|date_format:H:i',
             'participant' => 'nullable|integer|min:1',
             'statut' => 'nullable|string',
             'organisateur_id' => 'nullable|exists:organisateurs,id',

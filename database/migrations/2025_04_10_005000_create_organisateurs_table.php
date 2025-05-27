@@ -16,7 +16,13 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->string('nom_responsable');
             $table->string('adresse');
-            $table->enum('type_organisation', ['ONG', 'hôpital', 'Pharmacie','ministère','Centre de santé' ,'Laboratoire','autre']);
+            $table->enum('type_organisation', ['Organisation non gouvernementale (ONG)','ONG médicale','Association humanitaire','Croix-Rouge / Croissant-Rouge',
+            'Fondation médicale','Organisme international','Hôpital public','Hôpital privé',
+            'Clinique','Centre de santé','Poste de santé','Pharmacie','Laboratoire',
+            'Ministère de la Santé','Agence gouvernementale','Direction régionale de la santé',
+            'Inspection médicale','Université / Faculté de médecine','Institut de recherche médicale',
+            'Entreprise privée (RSE)','Collectivité territoriale','Organisation communautaire',
+            'Centre médico-social','Service de santé scolaire','Service de santé militaire','Autre']);
             $table->foreignId('structure_transfusion_sanguin_id')->constrained('structure_transfusion_sanguins');
             $table->timestamps();
         });

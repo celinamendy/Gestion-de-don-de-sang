@@ -175,28 +175,19 @@ public function campagnesAVenir()
     return response()->json($campagnes);
 }
 
-    public function store(Request $request)
-    {
-        $user = Auth::user();
+ 
+public function store(Request $request)
+{
+    $user = Auth::user();
 
-        // Vérifie que l'utilisateur est un organisateur
-        if (!$user->hasRole('Organisateur')) {
-            return response()->json([
-                'message' => 'Seuls les organisateurs peuvent créer des campagnes.'
-            ], 403);
-        }
+    if (!$user->hasAnyRole(['Organisateur', 'Structure_transfusion_sanguin'])) {
+        return response()->json([
+            'message' => 'Seuls les organisateurs ou les structures peuvent créer des campagnes.'
+        ], 403);
+    }
 
-        // Récupérer l'ID de l'organisateur lié à l'utilisateur
-        $organisateur = $user->organisateur;
-
-        if (!$organisateur) {
-            return response()->json([
-                'message' => 'Aucun organisateur lié à cet utilisateur.'
-            ], 404);
-        }
-
-        $validated = $request->validate([
-            'theme' => 'required|string|max:255',
+    $rules = [
+         'theme' => 'required|string|max:255',
             'description' => 'nullable|string',
             'lieu' => 'required|string|max:255',
             'date_debut' => 'required|date',
@@ -204,19 +195,61 @@ public function campagnesAVenir()
             'Heure_debut' => 'required|date_format:H:i',
             'Heure_fin' => 'required|date_format:H:i|after:Heure_debut',
             'participant' => 'required|integer|min:1',
-            'statut' => 'required|string',
-            'structure_transfusion_sanguin_id' => 'required|exists:structure_transfusion_sanguins,id',
-        ]);
-        $campagne = new Campagne($validated);
-        $campagne->organisateur_id = $organisateur->id;
-        $campagne->save();
+            'statut' => 'required|string',    
+    ];
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Campagne créée avec succès.',
-            'data' => $campagne
-        ], 201);
+    if ($user->hasRole('Organisateur')) {
+        $rules['structure_transfusion_sanguin_id'] = 'required|exists:structure_transfusion_sanguins,id';
     }
+
+    $validated = $request->validate($rules);
+
+    // Validation croisée date + heure
+    $debut = Carbon::parse($validated['date_debut'] . ' ' . $validated['Heure_debut']);
+    $fin = Carbon::parse($validated['date_fin'] . ' ' . $validated['Heure_fin']);
+    if ($fin->lessThanOrEqualTo($debut)) {
+        return response()->json([
+            'message' => 'La date et l\'heure de fin doivent être postérieures à celles de début.'
+        ], 422);
+    }
+
+    $campagne = new Campagne($validated);
+
+    if ($user->hasRole('Organisateur')) {
+        $organisateur = $user->organisateur;
+        if (!$organisateur) {
+            return response()->json([
+                'message' => 'Aucun organisateur lié à cet utilisateur.'
+            ], 404);
+        }
+        $campagne->organisateur_id = $organisateur->id;
+
+    } elseif ($user->hasRole('Structure_transfusion_sanguin')) {
+        $structure = $user->structure;
+        if (!$structure) {
+            return response()->json([
+                'message' => 'Aucune structure liée à cet utilisateur.'
+            ], 404);
+        }
+        $campagne->structure_transfusion_sanguin_id = $structure->id;
+    }
+
+    try {
+        $campagne->save();
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Erreur lors de la création de la campagne.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Campagne créée avec succès.',
+        'data' => $campagne
+    ], 201);
+}
+
 
     public function show($id)
     {

@@ -69,6 +69,7 @@ public function structure()
     return $this->hasOne(StructureTransfusionSanguin::class);
 }
 
+
 public function admin()
 {
     return $this->hasOne(Admin::class);

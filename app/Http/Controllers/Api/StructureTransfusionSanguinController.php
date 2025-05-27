@@ -9,6 +9,7 @@ use App\Models\StructureTransfusionSanguin;
 
 class StructureTransfusionSanguinController extends Controller
 {
+    
     /**
      * Display a listing of the resource.
      */
@@ -16,6 +17,36 @@ class StructureTransfusionSanguinController extends Controller
        {
         return StructureTransfusionSanguin::all();
     }
+    
+//     public function index()
+// {
+//     $user = auth()->user();
+//     $sts_id = $user->structure_transfusion_sanguin_id;
+
+//     $structures = StructureTransfusionSanguin::where('id', '!=', $sts_id)->get();
+
+//     return response()->json($structures);
+// }
+
+// public function index()
+// {
+//     $user = auth()->user();
+//     $sts_id = $user->structure_transfusion_sanguin_id;
+
+//     $structures = StructureTransfusionSanguin::where('id', '!=', $sts_id)->get();
+
+//     return response()->json($structures);
+// }
+public function structuresDestinataires()
+{
+    $user = auth()->user();
+    $sts_id = $user->structure_transfusion_sanguin_id;
+
+    $structures = StructureTransfusionSanguin::where('id', '!=', $sts_id)->get();
+
+    return response()->json($structures);
+}
+
 
     /**
      * Store a newly created resource in storage.
