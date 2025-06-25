@@ -13,8 +13,7 @@ use Carbon\Carbon;
 
 class DashboardDonateurController extends Controller
 {
-    
- /**
+    /**
      * Affiche un message de bienvenue avec les infos de l'utilisateur connecté
      */
     public function dashboardDonateur()
@@ -34,21 +33,28 @@ class DashboardDonateurController extends Controller
     {
         $donateur = Auth::user();
 
+        // Nombre de dons (participations validées)
         $donsEffectues = Participation::where('donateur_id', $donateur->id)
             ->where('statut', 'validé')
             ->count();
 
+        // Dernier don validé
         $dernierDon = Participation::where('donateur_id', $donateur->id)
             ->where('statut', 'validé')
             ->orderBy('created_at', 'desc')
             ->first();
 
+        // Prochaine date de don autorisée
         $prochainDon = $dernierDon ? Carbon::parse($dernierDon->created_at)->addDays(60) : null;
         $joursRestants = $prochainDon ? Carbon::now()->diffInDays($prochainDon, false) : null;
+
+        // Statut d'éligibilité
         $eligibilite = $joursRestants !== null && $joursRestants <= 0 ? 'Éligible' : 'Non éligible';
 
+        // Système de badges simple (jusqu'à 3)
         $badges = $donsEffectues >= 3 ? 3 : $donsEffectues;
 
+        // Historique des participations (les 8 dernières validées)
         $historique = Participation::with('campagne')
             ->where('donateur_id', $donateur->id)
             ->where('statut', 'validé')
@@ -56,6 +62,7 @@ class DashboardDonateurController extends Controller
             ->limit(8)
             ->get();
 
+        // Campagnes à venir
         $campagnes = Campagne::where('date_debut', '>=', Carbon::now())
             ->orderBy('date_debut', 'asc')
             ->limit(8)
@@ -78,18 +85,14 @@ class DashboardDonateurController extends Controller
     /**
      * Retourne la liste des campagnes à venir
      */
-   public function campagnesAVenir(Request $request)
-{
-   
+    public function campagnesAVenir(Request $request)
+    {
+        $campagnes = Campagne::where('date_debut', '>', now())
+            ->orderBy('date_debut', 'asc')
+            ->get();
 
-    // Récupérer les campagnes dont la date de début est après la date actuelle
-    $campagnes = Campagne::where('date_debut', '>', now()) // Comparer la date_debut avec la date actuelle
-                        ->orderBy('date_debut', 'asc') // Trier par date_debut croissante
-                        ->get();
-
-    return response()->json($campagnes);
-}
-
+        return response()->json($campagnes);
+    }
 
     /**
      * Permet au donateur de s'inscrire à une campagne

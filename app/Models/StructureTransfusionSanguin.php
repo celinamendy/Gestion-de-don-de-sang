@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Campagne;
 class StructureTransfusionSanguin extends Model
 {
-    
+    protected $table = 'structure_transfusion_sanguins';
+
     protected $guarded = [];
     use HasFactory, HasRoles;
 // Structure appartient à une région
@@ -33,12 +34,12 @@ class StructureTransfusionSanguin extends Model
     //     return $this->belongsTo(Organisateur::class);
     // }
 
-    public function demandesRavitaillementEnvois()
+    public function structureDemandeur()
     {
         return $this->hasMany(DemandeRavitaillement::class, 'sts_demandeur_id');
     }
 
-    public function demandesRavitaillementRecus()
+    public function structureDestinataire()
     {
         return $this->hasMany(DemandeRavitaillement::class, 'sts_destinataire_id');
     }

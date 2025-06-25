@@ -7,6 +7,7 @@ use App\Models\BanqueSang;
 use Illuminate\Http\Request;
 use App\Models\Groupe_sanguin;
 use Illuminate\Support\Facades\Auth;
+use App\Models\DemandeRavitaillement;
 use Illuminate\Support\Facades\DB;
 
 
@@ -134,7 +135,7 @@ public function stocks()
             ->where('structure_transfusion_sanguin_id', $structureId)
             ->get();
 
-        $stocks = $stocks->map(function ($item) {
+        $stocks = $stocks->map(function ($item) use ($user) {
             $maxCapacity = 100;
             $item->percentage = round(($item->quantity / $maxCapacity) * 100);
             $item->level = match (true) {
@@ -142,6 +143,29 @@ public function stocks()
                 $item->percentage < 50 => 'low',
                 default => 'normal',
             };
+
+            // 🔔 Notification si stock faible ou critique
+            if (in_array($item->level, ['critical', 'low'])) {
+                $message = "Le stock du groupe sanguin {$item->type} est actuellement à un niveau {$item->level}.";
+
+                // Évite les doublons : on vérifie si la notification existe déjà
+                $dejaNotifie = \App\Models\Notification::where('user_id', $user->id)
+                    ->where('message', $message)
+                    ->where('type', 'alerte_stock')
+                    ->where('statut', 'non-lue')
+                    ->exists();
+
+                if (!$dejaNotifie) {
+                    \App\Models\Notification::create([
+                        'user_id' => $user->id,
+                        'message' => $message,
+                        'type' => 'alerte_stock',
+                        'statut' => 'non-lue',
+                        'created_at' => now(),
+                    ]);
+                }
+            }
+
             return $item;
         });
 
@@ -170,6 +194,32 @@ public function stocks()
     $user = Auth::user();
     $structureId = $user->structure->id;
 
+    // On vérifie si une entrée existe déjà pour ce groupe et cette structure
+    $banque = BanqueSang::where('structure_transfusion_sanguin_id', $structureId)
+        ->where('groupe_sanguin_id', $request->groupe_sanguin_id)
+        ->first();
+
+    if ($banque) {
+        // Met à jour les quantités et les dates
+        $banque->update([
+            'nombre_poche' => $banque->nombre_poche + $request->nombre_poche,
+            'stock_actuelle' => $banque->stock_actuelle + $request->stock_actuelle,
+            'date_mise_a_jour' => $request->date_mise_a_jour,
+            'statut' => $request->statut,
+            'date_expiration' => $request->date_expiration,
+            'heure_expiration' => $request->heure_expiration,
+            'date_dernier_stock' => $request->date_dernier_stock,
+            'date_dernier_approvisionnement' => $request->date_dernier_approvisionnement,
+            'date_dernier_rapprochement' => $request->date_dernier_rapprochement,
+        ]);
+
+        return response()->json([
+            'message' => 'Stock mis à jour avec succès.',
+            'banque' => $banque
+        ], 200);
+    }
+
+    // Sinon on crée une nouvelle entrée
     $banque = BanqueSang::create([
         'nombre_poche' => $request->nombre_poche,
         'stock_actuelle' => $request->stock_actuelle,
@@ -184,7 +234,10 @@ public function stocks()
         'structure_transfusion_sanguin_id' => $structureId,
     ]);
 
-    return response()->json($banque, 201);
+    return response()->json([
+        'message' => 'Nouveau stock ajouté avec succès.',
+        'banque' => $banque
+    ], 201);
 }
 
     public function show($id)
@@ -242,18 +295,42 @@ public function stocks()
 
     return response()->json($banque, 200);
 }
+public function destroy($id)
+{
+    $user = Auth::user();
+    $structureId = $user->structure->id;
 
+    $banque = BanqueSang::where('id', $id)
+        ->where('structure_transfusion_sanguin_id', $structureId)
+        ->first();
 
-    public function destroy($id)
-    {
-        $structureId = $this->getStructureId();
-
-        $banque = BanqueSang::where('id', $id)
-            ->where('structure_transfusion_sanguin_id', $structureId)
-            ->firstOrFail();
-
-        $banque->delete();
-
-        return response()->json(['message' => 'Banque supprimée avec succès.']);
+    if (!$banque) {
+        return response()->json(['message' => 'Banque introuvable ou non autorisée.'], 404);
     }
+
+    $banque->delete();
+
+    return response()->json(['message' => 'Banque supprimée avec succès.']);
+}
+//methode pour obtenir les performances de la banque de sang
+ public function getPerformances()
+    {
+        // Données simulées — à remplacer par des requêtes SQL plus tard
+        $data = [
+            'donationsThisMonth' => DB::table('dons')->whereMonth('created_at', now()->month)->count(),
+            'distributionsThisMonth' => DB::table('distributions')->whereMonth('created_at', now()->month)->count(),
+            'averageStockDuration' => DB::table('stocks')->avg('duree_stock'), // à adapter selon ta table
+            'stockTurnoverRate' => 75, // à calculer réellement plus tard
+            'alertsThisWeek' => DB::table('alertes')->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'complianceRate' => 92 // taux simulé, à calculer selon des critères de conformité
+        ];
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Données de performance récupérées.',
+            'data' => $data
+        ]);
+    }
+
+
 }

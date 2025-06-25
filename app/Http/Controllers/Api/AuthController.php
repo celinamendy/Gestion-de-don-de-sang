@@ -67,7 +67,7 @@ class AuthController extends Controller
             'poids' => ['nullable', 'numeric'],
             'antecedent_medicament' => ['nullable', 'string'],
             'date_dernier_don' => ['nullable', 'date'],
-            'groupe_sanguin_id' => ['nullable', 'exists:groupe_sanguin,id'],
+            'groupe_sanguin_id' => ['nullable', 'exists:groupe_sanguins,id'],
             'nom_responsable' => ['nullable', 'string'],
             'type_organisation' => ['nullable', 'string'],
             'type_entite' => ['nullable', 'string'],
@@ -107,8 +107,7 @@ class AuthController extends Controller
                     'poids' => $request->input('poids'),
                     'antecedent_medicament' => $request->input('antecedent_medicament'),
                     'date_dernier_don' => $request->input('date_dernier_don'),
-                    'groupe_sanguin_id' => $request->input('groupe_sanguins_id'),
-                ]);
+                    'groupe_sanguin_id' => $request->input('groupe_sanguin_id'),                ]);
                 Log::info('Donateur créé', ['user_id' => $user->id]);
                 return response()->json(['user' => $user, 'donateur' => $donateur], 201);
 
@@ -123,7 +122,8 @@ class AuthController extends Controller
                 Log::info('Organisateur créé', ['user_id' => $user->id]);
                 return response()->json(['user' => $user, 'organisateur' => $organisateur], 201);
 
-            case 'structure':
+            case 'structure_transfusion_sanguin':
+
                 $structure = StructureTransfusionSanguin::create([
                     'user_id' => $user->id,
                     'nom_responsable' => $request->input('nom_responsable'),
@@ -155,7 +155,7 @@ class AuthController extends Controller
                 'access_token' => $token,
                 'token_type' => 'bearer',
                 'user' => auth()->user(),
-                'expires_in' => env('JWT_TTL', 60) * 60
+                'expires_in' => env('JWT_TTL', 30000) * 30000
             ]);
         } catch (JWTException $e) {
             Log::error('Erreur lors du rafraîchissement du token', ['exception' => $e->getMessage()]);

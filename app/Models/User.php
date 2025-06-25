@@ -64,11 +64,11 @@ public function organisateur()
     return $this->hasOne(Organisateur::class);
 }
 
+
 public function structure()
 {
-    return $this->hasOne(StructureTransfusionSanguin::class);
+    return $this->hasOne(StructureTransfusionSanguin::class, 'user_id');
 }
-
 
 public function admin()
 {
@@ -78,11 +78,11 @@ public function region()
 {
     return $this->belongsTo(Region::class);
 }
-public function notification()
-    {
-        return $this->hasMany(Notification::class, 'user_id');
-    }
-    public function participations()
+public function notifications()
+{
+    return $this->hasMany(Notification::class, 'user_id');
+}
+public function participations()
     {
         return $this->hasMany(Participation::class);
     }

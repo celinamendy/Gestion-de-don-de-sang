@@ -19,20 +19,45 @@ class StructureDashboardController extends Controller
 {
 //    
 
-
-    public function campagnes()
+ public function getMesCampagnesStructure()
 {
-    try {
-        $campagnes = Campagne::with( 'structureTransfusionSanguin')->get();
+    $user = Auth::user();
 
-        return response()->json($campagnes);
-    } catch (\Exception $e) {
+    // Vérifie que l'utilisateur a le rôle "Structure_transfusion_sanguin"
+    if (!$user->hasRole('Structure_transfusion_sanguin')) {
         return response()->json([
-            'message' => 'Erreur lors de la récupération des campagnes',
-            'error' => $e->getMessage()
-        ], 500);
+            'message' => 'Seules les structures peuvent consulter leurs campagnes.'
+        ], 403);
     }
+
+    // Récupère la structure liée à l'utilisateur connecté
+    $structure = $user->structure;
+
+    if (!$structure) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Aucune structure liée à cet utilisateur.',
+        ], 404);
+    }
+
+    $campagnes = Campagne::where('structure_transfusion_sanguin_id', $structure->id)
+        ->with('organisateur')
+        ->get();
+
+    if ($campagnes->isEmpty()) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Aucune campagne trouvée pour votre structure.',
+        ], 404);
+    }
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Liste des campagnes pour votre structure.',
+        'data' => $campagnes
+    ], 200);
 }
+
     public function statistiquesGenerales()
     {
         $user = Auth::user();
@@ -272,5 +297,28 @@ class StructureDashboardController extends Controller
 
     return response()->json($demandes);
 }
+public function demandesUrgentes()
+{
+    $structure = Auth::user(); // ou Auth::user()->structure selon ta relation
+
+    if (!$structure) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Aucune structure associée à cet utilisateur.'
+        ], 403);
+    }
+
+    $demandesUrgentes = DemandeRavitaillement::where('sts_demandeur_id', $structure->id)
+        ->where('niveau_urgence', 'urgent') // À adapter selon ton champ exact
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Demandes urgentes récupérées avec succès.',
+        'data' => $demandesUrgentes
+    ]);
+}
+
 
 }

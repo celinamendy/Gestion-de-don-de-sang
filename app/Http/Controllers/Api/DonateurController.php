@@ -91,6 +91,108 @@ class DonateurController extends Controller
         ]);
     }
         
+//    public function showProfil()
+// {
+//     $user = Auth::user();
+
+//     // Vérifie que l'utilisateur a bien le rôle donateur
+//     if (!$user->hasRole('Donateur')) {
+//         return response()->json([
+//             'message' => 'Seul un donateur connecté peut voir son profil.'
+//         ], 403);
+//     }
+
+//     // Récupérer le donateur lié à cet utilisateur
+//     $donateur = $user->donateur;
+
+//     if (!$donateur) {
+//         return response()->json([
+//             'status' => false,
+//             'message' => 'Aucun donateur lié à cet utilisateur.',
+//         ], 404);
+//     }
+
+//     // Charger les relations supplémentaires
+//     $donateur->load(['user.region', 'groupe_sanguin']);
+
+//     // Statistiques
+//     $totalDons = $donateur->participations()->where('statut', 'validée')->count();
+
+//     $prochainesCampagnes = $donateur->participations()
+//         ->whereHas('campagne', fn($q) => $q->where('date_debut', '>', now()))
+//         ->count();
+
+//     $dernierDon = $donateur->participations()
+//         ->where('statut', 'validée')
+//         ->orderByDesc('created_at')
+//         ->first()?->created_at;
+
+//     return response()->json([
+//         'status' => true,
+//         'data' => [
+//             'donateur' => $donateur,
+//             'statistiques' => [
+//                 'totalDons' => $totalDons,
+//                 'prochainesCampagnes' => $prochainesCampagnes,
+//                 'dernierDon' => $dernierDon,
+//             ]
+//         ]
+//     ]);
+// }
+
+
+public function profilComplet()
+{
+    $user = Auth::user();
+
+    // Vérifie que l'utilisateur a bien le rôle donateur
+    if (!$user->hasRole('Donateur')) {
+        return response()->json([
+            'message' => 'Seul un donateur connecté peut voir son profil.'
+        ], 403);
+    }
+
+    // Récupérer le donateur lié à cet utilisateur
+    $donateur = $user->donateur()
+        ->with(['groupe_sanguin', 'participations' => function ($query) {
+            $query->orderBy('date_participation', 'desc');
+        }])
+        ->first();
+
+    if (!$donateur) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Aucun donateur lié à cet utilisateur.',
+        ], 404);
+    }
+
+    // ➕ Récupérer les participations validées avec date
+    $participationsValidees = $donateur->participations()
+        ->where('statut', 'Validé')
+        ->whereNotNull('date_participation')
+        ->orderBy('date_participation')
+        ->get();
+
+    // ➕ Statistiques basées uniquement sur les participations valides
+    $statistiques = [
+        'total_participations' => $participationsValidees->count(),
+        'quantite_total' => $participationsValidees->sum('quantite'),
+        'vies_sauvees' => $participationsValidees->sum('quantite') * 3,
+        'premier_participation' => optional($participationsValidees->first())->date_participation,
+        'dernier_participation' => optional($participationsValidees->last())->date_participation,
+        'frequence' => 'Tous les 3 mois'
+    ];
+
+    return response()->json([
+        'status' => true,
+        'data' => [
+            'donateur' => $donateur,
+            'statistiques' => $statistiques,
+        ]
+    ]);
+}
+
+
     /**
      * Afficher les informations d'un donateur par ID utilisateur.
      */

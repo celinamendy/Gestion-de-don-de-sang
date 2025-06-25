@@ -56,7 +56,7 @@ class CampagneStructureController extends Controller
             'date_fin' => 'required|date|after_or_equal:date_debut',
             'Heure_debut' => 'required|date_format:H:i',
             'Heure_fin' => 'required|date_format:H:i|after:Heure_debut',
-            'participant' => 'required|integer|min:1',
+            // 'participant' => 'required|integer|min:1',
             'statut' => 'required|string',
             'organisateur_id' => 'required|exists:organisateurs,id',
         ]);
@@ -187,7 +187,7 @@ class CampagneStructureController extends Controller
             'date_fin' => 'nullable|date',
             'Heure_debut' => 'nullable|date_format:H:i',
             'Heure_fin' => 'nullable|date_format:H:i',
-            'participant' => 'nullable|integer|min:1',
+            // 'participant' => 'nullable|integer|min:1',
             'statut' => 'nullable|string',
             'organisateur_id' => 'nullable|exists:organisateurs,id',
         ]);
