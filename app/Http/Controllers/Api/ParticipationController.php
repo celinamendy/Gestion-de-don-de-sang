@@ -184,29 +184,106 @@ class ParticipationController extends Controller
     }
  
     //function pour se desinscrire a une campagnes apres inscription 
-public function desinscrire(Request $request)
+// Méthode modifiée dans ParticipationController
+/**
+ * Désinscription d'une campagne avec notifications automatiques
+ */
+public function desinscrireCampagne(Request $request, $campagneId)
 {
-    $donateurId = $request->input('donateur_id'); // snake_case
-    $campagneId = $request->input('campagne_id');
+    try {
+        DB::beginTransaction();
 
-    $participation = Participation::where('donateur_id', $donateurId)
-                                  ->where('campagne_id', $campagneId)
-                                  ->first();
+        $donateur = Auth::user()->donateur;
+        
+        if (!$donateur) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucun donateur lié à cet utilisateur.'
+            ], 404);
+        }
 
-    if (!$participation) {
+        // Vérifier que le donateur a un utilisateur associé
+        if (!$donateur->user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Aucun utilisateur associé à ce donateur.'
+            ], 404);
+        }
+        
+        $campagne = Campagne::find($campagneId);
+        
+        if (!$campagne) {
+            return response()->json([
+                'status' => false,
+                'message' => "Campagne non trouvée."
+            ], 404);
+        }
+
+        // Vérifier l'existence de la participation
+        $participation = Participation::where('donateur_id', $donateur->id)
+            ->where('campagne_id', $campagneId)
+            ->first();
+
+        if (!$participation) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Vous n\'êtes pas inscrit à cette campagne.'
+            ], 409);
+        }
+
+        // Vérifier si la campagne a déjà commencé (optionnel)
+        $date_debut = Carbon::parse($campagne->date_debut . ' ' . $campagne->Heure_debut);
+        $dateActuelle = Carbon::now();
+
+        // Optionnel : empêcher la désinscription si la campagne a déjà commencé
+        if ($dateActuelle->greaterThanOrEqualTo($date_debut)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Impossible de se désinscrire, la campagne a déjà commencé.'
+            ], 400);
+        }
+
+        // Vérifier si la participation est déjà validée
+        if ($participation->statut === 'Validé') {
+            return response()->json([
+                'status' => false,
+                'message' => 'Impossible de se désinscrire, votre participation a déjà été validée.'
+            ], 400);
+        }
+
+        // Supprimer la participation
+        $participation->delete();
+
+        DB::commit();
+
+        return response()->json([
+            'status' => true,
+            'message' => "Désinscription réussie de la campagne.",
+            'data' => [
+                'campagne_id' => $campagne->id,
+                'campagne_theme' => $campagne->theme,
+                'date_desinscription' => now()
+            ],
+        ], 200);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        Log::error('Erreur désinscription campagne', [
+            'campagne_id' => $campagneId,
+            'user_id' => Auth::id(),
+            'erreur' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
+                
         return response()->json([
             'status' => false,
-            'message' => 'Inscription non trouvée.'
-        ], 404);
+            'message' => 'Erreur lors de la désinscription : ' . $e->getMessage()
+        ], 500);
     }
-
-    $participation->delete();
-
-    return response()->json([
-        'status' => true,
-        'message' => 'Désinscription réussie.'
-    ]);
 }
+
+
 
     /**
      * CORRECTION : Notification des organisateurs/structures - FIX de la requête SQL

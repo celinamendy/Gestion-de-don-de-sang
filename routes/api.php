@@ -43,12 +43,14 @@ Route::middleware('auth:api')->group(function () {
 
 
 });
-Route::delete('/desinscrire/{donateur_id}/{campagne_id}', [ParticipationController::class, 'desinscrire']);
+// Route::delete('/desinscrire/{donateur_id}/{campagne_id}', [ParticipationController::class, 'desinscrire']);
 
 // Routes pour les notifications
 Route::middleware('auth:api')->group(function () {
       Route::post('/campagnes/{campagne_id}/inscrire', [ParticipationController::class, 'inscrire']);
     Route::get('/mes-inscriptions', [ParticipationController::class, 'mesInscriptions']);
+    Route::delete('/campagnes/{campagneId}/desinscription', [ParticipationController::class, 'desinscrireCampagne']);
+// Route::delete('/desinscrire/{donateur_id}/{campagne_id}', [ParticipationController::class, 'desinscrire']);
     // Route::delete('/campagnes/desinscrire', [ParticipationController::class, 'desinscrire']);
     Route::get('/inscriptions-organisateur', [ParticipationController::class, 'inscriptionsOrganisateur']);
     Route::middleware('auth:api')->group(function () {
